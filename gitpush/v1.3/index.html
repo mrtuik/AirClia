@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>AirC — AirClia</title>
+<meta name="description" content="AirC is a premium AI voice companion. Talk to AirClia — witty, confident and always listening." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+/* ===================================================================
+   AirC design system
+   =================================================================== */
+:root{
+  --bg:#FFFFFF;
+  --surface:#F7F7FB;
+  --card:#FFFFFF;
+  --accent:#8FA6FF;
+  --accent-soft:#B8C4FF;
+  --accent-wash:#EEF1FF;
+  --secondary:#FFC9DE;
+  --text:#2B2B33;
+  --muted:#8A8A95;
+  --line:#ECECF2;
+  --error:#FF8080;
+  --radius-card:22px;
+  --radius-btn:16px;
+  --shadow-soft:0 8px 30px rgba(0,0,0,.06);
+  --shadow-lift:0 14px 44px rgba(43,43,51,.10);
+  --ease:cubic-bezier(.22,.75,.28,1);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--surface);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input{font-family:inherit;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px;}
+
+#app{position:relative;width:100%;min-height:100dvh;overflow:hidden;}
+.screen{
+  position:fixed;inset:0;display:none;flex-direction:column;
+  opacity:0;transform:translateY(8px);
+  transition:opacity .38s var(--ease),transform .38s var(--ease);
+}
+.screen.active{display:flex;opacity:1;transform:none;}
+
+/* ---------- shared header ---------- */
+.app-header{
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;gap:8px;
+  padding:calc(var(--safe-t) + 14px) 16px 12px;
+  background:transparent;
+}
+.app-header .h-left{display:flex;justify-content:flex-start;min-width:0;}
+.app-header .h-right{display:flex;justify-content:flex-end;gap:8px;min-width:0;}
+.h-title{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.h-title strong{font-size:16px;font-weight:600;letter-spacing:-.2px;}
+.h-title .h-voice{
+  font-size:11.5px;color:var(--muted);font-weight:500;
+  padding:2px 8px;border-radius:999px;transition:background .25s var(--ease),color .25s var(--ease);
+}
+.h-title .h-voice:hover{background:var(--accent-wash);color:var(--accent);}
+.icon-btn{
+  width:40px;height:40px;border-radius:14px;display:grid;place-items:center;
+  color:var(--text);background:transparent;flex-shrink:0;
+  transition:background .25s var(--ease),transform .25s var(--ease),color .25s var(--ease);
+}
+.icon-btn:hover{background:#EFEFF5;}
+.icon-btn:active{transform:scale(.94);}
+.icon-btn.tinted{background:var(--card);box-shadow:var(--shadow-soft);}
+.icon-btn svg{width:19px;height:19px;stroke-width:1.7;}
+
+/* ---------- permission screen ---------- */
+#screen-permission{align-items:center;justify-content:center;padding:24px;background:var(--surface);}
+.perm-card{
+  width:100%;max-width:380px;background:var(--card);border-radius:28px;
+  padding:36px 28px 30px;text-align:center;box-shadow:var(--shadow-soft);
+  border:1px solid var(--line);
+}
+.perm-icon{
+  width:72px;height:72px;margin:0 auto 22px;border-radius:26px;display:grid;place-items:center;
+  background:linear-gradient(160deg,var(--accent-wash),#FFF3F8);color:var(--accent);
+  animation:breathe 5s var(--ease) infinite;
+}
+.perm-icon svg{width:28px;height:28px;stroke-width:1.6;}
+.perm-card h1{font-size:21px;margin:0 0 8px;font-weight:600;letter-spacing:-.3px;}
+.perm-card p{font-size:14px;line-height:1.6;color:var(--muted);margin:0 0 26px;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:52px;padding:0 26px;border-radius:18px;font-size:15px;font-weight:600;
+  background:var(--text);color:#fff;transition:transform .25s var(--ease),opacity .25s var(--ease);
+}
+.btn:active{transform:scale(.98);}
+.btn.wide{width:100%;}
+.btn.ghost{background:var(--surface);color:var(--text);border:1px solid var(--line);}
+.btn.accent{background:linear-gradient(135deg,var(--accent-soft),var(--accent));color:#fff;}
+.perm-error{
+  display:none;margin-top:16px;font-size:13px;color:var(--error);line-height:1.5;
+}
+.perm-error.visible{display:block;}
+
+/* ---------- home (chat) ---------- */
+#screen-home{background:var(--bg);}
+.home-body{
+  flex:1;overflow-y:auto;padding:8px 18px 12px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.home-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;padding-bottom:14vh;text-align:center;
+}
+.home-empty h2{font-size:24px;font-weight:600;letter-spacing:-.5px;margin:0;}
+.home-empty p{font-size:14px;color:var(--muted);margin:0;max-width:260px;line-height:1.6;}
+.home-empty .orb{
+  width:58px;height:58px;border-radius:50%;margin-bottom:6px;
+  background:radial-gradient(circle at 35% 30%,#fff,var(--accent-soft) 60%,var(--accent));
+  box-shadow:0 12px 34px rgba(143,166,255,.36);
+  animation:breathe 6s var(--ease) infinite;
+}
+.msg{max-width:86%;font-size:15px;line-height:1.62;animation:msgIn .4s var(--ease);}
+.msg.user{
+  align-self:flex-end;background:var(--text);color:#fff;
+  padding:12px 16px;border-radius:20px 20px 6px 20px;
+}
+.msg.ai{align-self:flex-start;color:var(--text);padding:2px 2px;}
+.msg.ai .who{
+  display:block;font-size:11px;font-weight:600;letter-spacing:.4px;
+  text-transform:uppercase;color:var(--accent);margin-bottom:5px;
+}
+.msg.pending{color:var(--muted);}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* ---------- composer ---------- */
+.composer-wrap{padding:6px 14px calc(var(--safe-b) + 14px);background:var(--bg);}
+.composer{
+  background:var(--card);border:1px solid var(--line);border-radius:26px;
+  box-shadow:var(--shadow-soft);padding:14px 16px 10px;
+  transition:box-shadow .3s var(--ease),border-color .3s var(--ease);
+}
+.composer:focus-within{box-shadow:var(--shadow-lift);border-color:#DFE3FF;}
+.composer textarea{
+  width:100%;border:none;resize:none;outline:none;background:transparent;
+  font-size:15.5px;line-height:1.55;color:var(--text);max-height:132px;min-height:24px;
+  font-family:inherit;
+}
+.composer textarea::placeholder{color:var(--muted);}
+.composer-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.composer-row .spacer{flex:1;}
+.chip-btn{
+  display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;
+  border-radius:999px;background:var(--surface);color:var(--muted);
+  font-size:12.5px;font-weight:500;max-width:150px;
+  transition:background .25s var(--ease),color .25s var(--ease);
+}
+.chip-btn svg{width:14px;height:14px;stroke-width:1.8;flex-shrink:0;}
+.chip-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chip-btn:hover{background:var(--accent-wash);color:var(--accent);}
+.round-btn{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:var(--surface);color:var(--text);flex-shrink:0;
+  transition:background .25s var(--ease),transform .25s var(--ease);
+}
+.round-btn:active{transform:scale(.93);}
+.round-btn svg{width:18px;height:18px;stroke-width:1.7;}
+.round-btn.primary{background:linear-gradient(135deg,var(--accent-soft),var(--accent));color:#fff;box-shadow:0 6px 18px rgba(143,166,255,.4);}
+
+/* ---------- assistant screen ---------- */
+#screen-assistant{background:linear-gradient(180deg,#FFFFFF 0%,#F7F7FB 55%,#F3F2FA 100%);}
+#model-container{position:absolute;inset:0;display:grid;place-items:center;padding-bottom:60px;}
+#screen-assistant .app-header{position:relative;z-index:3;}
+.avatar-btn{
+  width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  background:var(--card);box-shadow:var(--shadow-soft);color:var(--accent);
+}
+.avatar-btn svg{width:20px;height:20px;}
+
+.airc-model-wrapper{position:relative;width:min(88vw,420px);aspect-ratio:1;display:grid;place-items:center;}
+.airc-model-glow{
+  position:absolute;inset:6%;border-radius:50%;
+  background:radial-gradient(circle,rgba(184,196,255,.55),rgba(184,196,255,0) 68%);
+  opacity:.5;transition:opacity .6s var(--ease),transform .6s var(--ease);
+}
+.airc-model-frame-holder{position:relative;width:100%;height:100%;}
+.airc-model-canvas{width:100%;height:100%;display:block;}
+.airc-model-wrapper{animation:breathe 7s var(--ease) infinite;}
+.airc-state-idle .airc-model-glow{opacity:.42;}
+.airc-state-listening .airc-model-glow{opacity:.6;transform:scale(1.02);}
+.airc-state-thinking .airc-model-glow{opacity:.28;transform:scale(.97);}
+.airc-state-speaking .airc-model-glow{
+  opacity:.9;background:radial-gradient(circle,rgba(184,196,255,.85),rgba(255,201,222,.28) 55%,rgba(184,196,255,0) 72%);
+  animation:speakPulse 2.6s var(--ease) infinite;
+}
+.airc-state-speaking{animation:breathe 3.4s var(--ease) infinite;}
+@keyframes breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.018);}}
+@keyframes speakPulse{0%,100%{opacity:.62;transform:scale(1);}50%{opacity:1;transform:scale(1.05);}}
+
+/* ---------- captions ---------- */
+#captions{
+  position:absolute;left:50%;transform:translate(-50%,10px);
+  bottom:calc(var(--safe-b) + 118px);width:min(92%,520px);z-index:4;
+  background:rgba(43,43,51,.82);color:#fff;backdrop-filter:blur(14px);
+  padding:13px 18px;border-radius:18px;font-size:16.5px;line-height:1.5;
+  text-align:center;opacity:0;pointer-events:none;
+  transition:opacity .45s var(--ease),transform .45s var(--ease);
+}
+#captions.visible{opacity:1;transform:translate(-50%,0);}
+
+/* ---------- floating bottom nav ---------- */
+.floating-nav{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(var(--safe-b) + 20px);z-index:5;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(18px);
+  border:1px solid var(--line);border-radius:999px;
+  padding:8px;box-shadow:var(--shadow-lift);
+}
+.nav-item{
+  position:relative;height:46px;min-width:46px;padding:0 14px;border-radius:999px;
+  display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13px;font-weight:500;
+  transition:color .3s var(--ease),background .3s var(--ease),transform .3s var(--ease);
+}
+.nav-item svg{width:19px;height:19px;stroke-width:1.7;}
+.nav-item:active{transform:scale(.95);}
+.nav-item.active{color:var(--text);background:var(--surface);}
+.nav-mic{
+  width:58px;height:58px;border-radius:50%;display:grid;place-items:center;
+  background:var(--text);color:#fff;transition:transform .35s var(--ease),background .35s var(--ease),box-shadow .35s var(--ease);
+}
+.nav-mic svg{width:22px;height:22px;stroke-width:1.7;}
+.nav-mic.is-listening{
+  background:linear-gradient(135deg,var(--accent-soft),var(--accent));
+  box-shadow:0 0 0 6px rgba(143,166,255,.18);
+}
+
+/* ---------- overlays / sheets / drawers ---------- */
+.scrim{
+  position:fixed;inset:0;background:rgba(30,30,40,.28);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .35s var(--ease);z-index:40;
+}
+.scrim.visible{opacity:1;pointer-events:auto;}
+
+.drawer{
+  position:fixed;top:0;left:0;bottom:0;width:min(84vw,330px);z-index:50;
+  background:var(--card);transform:translateX(-102%);
+  transition:transform .42s var(--ease);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-lift);
+  padding-top:var(--safe-t);
+}
+.drawer.visible{transform:none;}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px 14px 8px;}
+.drawer-head h3{font-size:15px;font-weight:600;margin:0 0 0 6px;}
+.drawer-list{flex:1;overflow-y:auto;padding:6px 12px calc(var(--safe-b) + 18px);}
+.drawer-group{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);padding:16px 10px 6px;}
+.conv-row{
+  width:100%;display:flex;align-items:center;gap:10px;text-align:left;
+  padding:11px 12px;border-radius:14px;color:var(--text);
+  transition:background .25s var(--ease);
+}
+.conv-row:hover{background:var(--surface);}
+.conv-row.active{background:var(--accent-wash);}
+.conv-row .conv-main{flex:1;min-width:0;}
+.conv-row .conv-title{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.conv-row .conv-time{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.conv-row .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+.new-chat-row{
+  width:100%;display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;
+  background:var(--surface);font-size:14px;font-weight:600;margin:4px 0 2px;
+}
+.new-chat-row svg{width:17px;height:17px;}
+.empty-note{padding:24px 12px;font-size:13px;color:var(--muted);text-align:center;}
+
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;max-height:88dvh;
+  background:var(--card);border-radius:28px 28px 0 0;
+  transform:translateY(102%);transition:transform .45s var(--ease);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-lift);
+}
+.sheet.visible{transform:none;}
+.sheet-grab{width:38px;height:4px;border-radius:999px;background:var(--line);margin:10px auto 2px;}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:10px 20px 4px;}
+.sheet-head h3{font-size:17px;font-weight:600;margin:0;letter-spacing:-.2px;}
+.sheet-body{overflow-y:auto;padding:12px 18px calc(var(--safe-b) + 22px);}
+
+.section-label{font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin:20px 4px 10px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin:0 0 6px 4px;}
+.field input[type=text],.field input[type=password]{
+  width:100%;height:48px;padding:0 15px;border-radius:15px;border:1px solid var(--line);
+  background:var(--surface);font-size:14.5px;color:var(--text);outline:none;
+  transition:border-color .25s var(--ease),background .25s var(--ease);
+}
+.field input:focus{border-color:var(--accent-soft);background:var(--card);}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;}
+.row-between .rb-title{font-size:14.5px;font-weight:500;}
+.row-between .rb-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.switch{position:relative;width:48px;height:28px;flex-shrink:0;}
+.switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
+.switch .track{
+  position:absolute;inset:0;border-radius:999px;background:#E3E3EC;pointer-events:none;
+  transition:background .3s var(--ease);
+}
+.switch .thumb{
+  position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.14);pointer-events:none;transition:transform .3s var(--ease);
+}
+.switch input:checked ~ .track{background:var(--accent);}
+.switch input:checked ~ .thumb{transform:translateX(20px);}
+.seg{display:flex;gap:8px;padding:4px;}
+.seg-item{
+  flex:1;height:42px;border-radius:14px;background:var(--surface);color:var(--muted);
+  font-size:13.5px;font-weight:500;transition:all .3s var(--ease);border:1px solid transparent;
+}
+.seg-item.selected{background:var(--accent-wash);color:var(--accent);border-color:#DDE3FF;font-weight:600;}
+.privacy-note{font-size:11.5px;line-height:1.6;color:var(--muted);background:var(--surface);border-radius:14px;padding:12px 14px;margin-top:16px;}
+.sheet-actions{display:flex;gap:10px;margin-top:20px;}
+.sheet-actions .btn{flex:1;height:50px;}
+
+/* voice cards */
+.voice-card{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px;
+  border:1px solid var(--line);background:var(--card);margin-bottom:10px;
+  transition:border-color .3s var(--ease),background .3s var(--ease),box-shadow .3s var(--ease);
+}
+.voice-card.selected{border-color:var(--accent-soft);background:var(--accent-wash);}
+.voice-card .vc-main{flex:1;min-width:0;}
+.voice-card .vc-name{font-size:14.5px;font-weight:600;}
+.voice-card .vc-desc{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5;}
+.voice-card .vc-select{
+  height:36px;padding:0 16px;border-radius:12px;font-size:13px;font-weight:600;
+  background:var(--text);color:#fff;flex-shrink:0;transition:transform .25s var(--ease);
+}
+.voice-card .vc-select:active{transform:scale(.95);}
+.voice-card.selected .vc-select{background:var(--accent);}
+.add-voice-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  height:50px;border-radius:18px;border:1px dashed #D9DCEA;color:var(--accent);
+  font-size:14px;font-weight:600;background:transparent;margin-top:4px;
+  transition:background .25s var(--ease);
+}
+.add-voice-btn:hover{background:var(--accent-wash);}
+.add-voice-form{display:none;margin-top:12px;padding:14px;border-radius:18px;background:var(--surface);}
+.add-voice-form.visible{display:block;animation:msgIn .3s var(--ease);}
+
+/* popovers */
+.popover{
+  position:fixed;z-index:60;min-width:200px;background:var(--card);border:1px solid var(--line);
+  border-radius:20px;box-shadow:var(--shadow-lift);padding:8px;
+  opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;
+  transition:opacity .28s var(--ease),transform .28s var(--ease);
+}
+.popover.visible{opacity:1;transform:none;pointer-events:auto;}
+.popover .pop-label{font-size:10.5px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);padding:8px 12px 6px;}
+.pop-item{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 12px;border-radius:14px;font-size:14px;text-align:left;color:var(--text);
+  transition:background .25s var(--ease);
+}
+.pop-item:hover{background:var(--surface);}
+.pop-item .pi-sub{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;}
+.pop-item svg{width:16px;height:16px;color:var(--accent);}
+.pop-item.selected{background:var(--accent-wash);}
+
+/* toast */
+#toast{
+  position:fixed;left:50%;bottom:calc(var(--safe-b) + 96px);transform:translate(-50%,14px);
+  background:var(--text);color:#fff;font-size:13.5px;padding:12px 18px;border-radius:16px;
+  max-width:88vw;text-align:center;opacity:0;pointer-events:none;z-index:80;
+  transition:opacity .35s var(--ease),transform .35s var(--ease);
+}
+#toast.visible{opacity:1;transform:translate(-50%,0);}
+
+@media (min-width:760px){
+  .composer-wrap,.home-body{max-width:760px;margin:0 auto;width:100%;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ MICROPHONE PERMISSION ============ -->
+  <section id="screen-permission" class="screen" aria-label="Microphone setup">
+    <div class="perm-card">
+      <div class="perm-icon" id="perm-icon" aria-hidden="true"></div>
+      <h1>Microphone</h1>
+      <p>AirC talks with you out loud. Allow microphone access so AirClia can hear you and reply naturally.</p>
+      <button id="btn-allow-mic" class="btn wide">Proceed</button>
+      <div id="perm-error" class="perm-error">Mic access needed for AirC to work.</div>
+      <button id="btn-retry-mic" class="btn ghost wide" style="display:none;margin-top:12px;">Try again</button>
+    </div>
+  </section>
+
+  <!-- ============ DEFAULT HOME (chat) ============ -->
+  <section id="screen-home" class="screen" aria-label="Conversation home">
+    <header class="app-header">
+      <div class="h-left">
+        <button id="btn-history" class="icon-btn" aria-label="Chat history"></button>
+      </div>
+      <div class="h-title"><strong>AirClia</strong></div>
+      <div class="h-right">
+        <button id="btn-new-home" class="icon-btn" aria-label="New conversation"></button>
+        <button id="btn-persona-home" class="icon-btn" aria-label="Choose persona"></button>
+      </div>
+    </header>
+
+    <div class="home-body" id="home-body">
+      <div class="home-empty" id="home-empty">
+        <div class="orb" aria-hidden="true"></div>
+        <h2>Hey there.</h2>
+        <p>Type something, or tap the mic to start a live conversation with AirClia.</p>
+      </div>
+    </div>
+
+    <div class="composer-wrap">
+      <div class="composer">
+        <label for="composer-input" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Message AirClia</label>
+        <textarea id="composer-input" rows="1" placeholder="How can I help you?"></textarea>
+        <div class="composer-row">
+          <button id="btn-attach" class="round-btn" aria-label="More actions"></button>
+          <div class="spacer"></div>
+          <button id="btn-voice-chip" class="chip-btn" aria-label="Change voice"><span id="voice-chip-label">AirClia Voice</span></button>
+          <button id="btn-mic-home" class="round-btn primary" aria-label="Start voice conversation"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ASSISTANT (voice-first) ============ -->
+  <section id="screen-assistant" class="screen" aria-label="AirClia voice assistant">
+    <div id="model-container"></div>
+
+    <header class="app-header">
+      <div class="h-left">
+        <button id="btn-profile" class="avatar-btn" aria-label="Selected voice"></button>
+      </div>
+      <div class="h-title">
+        <strong>AirClia</strong>
+        <button id="btn-voice-name" class="h-voice" aria-label="Change voice">AirClia Voice</button>
+      </div>
+      <div class="h-right">
+        <button id="btn-new-assistant" class="icon-btn tinted" aria-label="New conversation"></button>
+      </div>
+    </header>
+
+    <div id="captions" aria-live="polite"></div>
+
+    <nav class="floating-nav" aria-label="Assistant controls">
+      <button id="nav-back" class="nav-item" aria-label="Back to chat"></button>
+      <button id="btn-mic" class="nav-mic" aria-label="Toggle microphone" aria-pressed="false"></button>
+      <button id="nav-more" class="nav-item" aria-label="Quick settings"></button>
+    </nav>
+  </section>
+
+  <!-- ============ OVERLAYS ============ -->
+  <div id="scrim" class="scrim"></div>
+
+  <aside id="drawer-history" class="drawer" aria-label="Conversation history">
+    <div class="drawer-head">
+      <h3>Chats</h3>
+      <button id="btn-drawer-close" class="icon-btn" aria-label="Close history"></button>
+    </div>
+    <div class="drawer-list">
+      <button id="btn-new-drawer" class="new-chat-row"><span id="new-chat-icon"></span>New chat</button>
+      <div id="conv-list"></div>
+    </div>
+  </aside>
+
+  <div id="sheet-voice" class="sheet" aria-label="Voice selection">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3>Choose a voice</h3>
+      <button id="btn-voice-close" class="icon-btn" aria-label="Close voice selection"></button>
+    </div>
+    <div class="sheet-body">
+      <div id="voice-list"></div>
+      <button id="btn-add-voice" class="add-voice-btn"><span id="add-voice-icon"></span>Add ElevenLabs voice</button>
+      <div id="add-voice-form" class="add-voice-form">
+        <div class="field">
+          <label for="input-new-voice-name">Name (optional)</label>
+          <input type="text" id="input-new-voice-name" placeholder="Rachel" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="input-new-voice-id">Voice ID</label>
+          <input type="text" id="input-new-voice-id" placeholder="Paste ElevenLabs Voice ID" autocomplete="off" />
+        </div>
+        <button id="btn-save-voice" class="btn accent wide" style="height:46px;">Select</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sheet-settings" class="sheet" aria-label="Settings">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3>Configuration</h3>
+      <button id="btn-settings-close" class="icon-btn" aria-label="Close settings"></button>
+    </div>
+    <div class="sheet-body">
+      <div class="section-label">AI</div>
+      <div class="field">
+        <label for="input-or-key">OpenRouter API key</label>
+        <input type="password" id="input-or-key" placeholder="Paste OpenRouter API key" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="input-or-model">Model</label>
+        <input type="text" id="input-or-model" placeholder="openai/gpt-4o-mini" autocomplete="off" list="model-suggestions" />
+        <datalist id="model-suggestions">
+          <option value="openai/gpt-4o-mini"></option>
+          <option value="anthropic/claude-3.5-haiku"></option>
+          <option value="google/gemini-2.0-flash-001"></option>
+          <option value="meta-llama/llama-3.3-70b-instruct"></option>
+        </datalist>
+      </div>
+
+      <div class="section-label">Voice</div>
+      <div class="field">
+        <label for="input-el-key">ElevenLabs API key</label>
+        <input type="password" id="input-el-key" placeholder="Paste ElevenLabs API key" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="input-el-voice">Default voice ID</label>
+        <input type="text" id="input-el-voice" placeholder="Voice ID" autocomplete="off" />
+      </div>
+
+      <div class="section-label">Behavior</div>
+      <div class="row-between">
+        <div>
+          <div class="rb-title">Show captions</div>
+          <div class="rb-sub">Display what AirClia says on screen.</div>
+        </div>
+        <label class="switch" aria-label="Show captions">
+          <input type="checkbox" id="toggle-captions" />
+          <span class="track"></span><span class="thumb"></span>
+        </label>
+      </div>
+      <div style="padding:6px 4px 0;">
+        <div class="rb-title" style="margin-bottom:8px;">Persona &amp; roast intensity</div>
+        <div class="seg" id="roast-options">
+          <button class="seg-item" data-value="mild">Mild</button>
+          <button class="seg-item" data-value="normal">Normal</button>
+          <button class="seg-item" data-value="savage">Savage</button>
+        </div>
+      </div>
+
+      <div class="privacy-note">Your API keys are stored locally in this browser and sent directly to the selected provider.</div>
+
+      <div class="sheet-actions">
+        <button id="btn-test-voice" class="btn ghost">Test voice</button>
+        <button id="btn-settings-save" class="btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="popover-persona" class="popover" role="menu" aria-label="Persona">
+    <div class="pop-label">Persona</div>
+    <button class="pop-item" data-persona="friendly" role="menuitem"><span>Friendly<span class="pi-sub">Warm, gentle nudges only.</span></span><span class="check"></span></button>
+    <button class="pop-item" data-persona="balanced" role="menuitem"><span>Balanced<span class="pi-sub">Witty with a bit of bite.</span></span><span class="check"></span></button>
+    <button class="pop-item" data-persona="savage" role="menuitem"><span>Savage<span class="pi-sub">No mercy for low effort.</span></span><span class="check"></span></button>
+  </div>
+
+  <div id="popover-quick" class="popover" role="menu" aria-label="Quick settings">
+    <div class="pop-item" style="cursor:default;">
+      <span>Show captions</span>
+      <label class="switch" aria-label="Show captions">
+        <input type="checkbox" id="toggle-captions-quick" />
+        <span class="track"></span><span class="thumb"></span>
+      </label>
+    </div>
+    <button class="pop-item" id="quick-persona" role="menuitem"><span>Persona</span></button>
+    <button class="pop-item" id="quick-settings" role="menuitem"><span>Configuration</span></button>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script type="module">
+import { AirCConfig } from "./config/config.js";
+import { AirCModel } from "./model/model.js";
+import { AirCVoice } from "./voice/voice.js";
+import { AirCBrain } from "./brain/brain.js";
+
+/* ===================================================================
+   Wiring — AirC.html is the orchestrator only. All domain logic lives
+   inside config.js / brain.js / voice.js / model.js.
+   =================================================================== */
+const config = new AirCConfig();
+const brain  = new AirCBrain(config);
+const voice  = new AirCVoice(config);
+const model  = new AirCModel(document.getElementById("model-container"));
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  screens: {
+    permission: $("screen-permission"),
+    home: $("screen-home"),
+    assistant: $("screen-assistant")
+  },
+  permIcon: $("perm-icon"),
+  btnAllowMic: $("btn-allow-mic"),
+  btnRetryMic: $("btn-retry-mic"),
+  permError: $("perm-error"),
+
+  btnHistory: $("btn-history"),
+  btnNewHome: $("btn-new-home"),
+  btnPersonaHome: $("btn-persona-home"),
+  homeBody: $("home-body"),
+  homeEmpty: $("home-empty"),
+  composerInput: $("composer-input"),
+  btnAttach: $("btn-attach"),
+  btnVoiceChip: $("btn-voice-chip"),
+  voiceChipLabel: $("voice-chip-label"),
+  btnMicHome: $("btn-mic-home"),
+
+  btnProfile: $("btn-profile"),
+  btnVoiceName: $("btn-voice-name"),
+  btnNewAssistant: $("btn-new-assistant"),
+  captions: $("captions"),
+  navBack: $("nav-back"),
+  navMore: $("nav-more"),
+  btnMic: $("btn-mic"),
+
+  scrim: $("scrim"),
+  drawer: $("drawer-history"),
+  btnDrawerClose: $("btn-drawer-close"),
+  btnNewDrawer: $("btn-new-drawer"),
+  newChatIcon: $("new-chat-icon"),
+  convList: $("conv-list"),
+
+  sheetVoice: $("sheet-voice"),
+  btnVoiceClose: $("btn-voice-close"),
+  voiceList: $("voice-list"),
+  btnAddVoice: $("btn-add-voice"),
+  addVoiceIcon: $("add-voice-icon"),
+  addVoiceForm: $("add-voice-form"),
+  inputNewVoiceName: $("input-new-voice-name"),
+  inputNewVoiceId: $("input-new-voice-id"),
+  btnSaveVoice: $("btn-save-voice"),
+
+  sheetSettings: $("sheet-settings"),
+  btnSettingsClose: $("btn-settings-close"),
+  inputOrKey: $("input-or-key"),
+  inputOrModel: $("input-or-model"),
+  inputElKey: $("input-el-key"),
+  inputElVoice: $("input-el-voice"),
+  toggleCaptions: $("toggle-captions"),
+  toggleCaptionsQuick: $("toggle-captions-quick"),
+  roastOptions: $("roast-options"),
+  btnTestVoice: $("btn-test-voice"),
+  btnSettingsSave: $("btn-settings-save"),
+
+  popPersona: $("popover-persona"),
+  popQuick: $("popover-quick"),
+  toast: $("toast")
+};
+
+model.onError = (msg) => showToast(msg);
+
+let silenceTimer = null;
+let recognition = null;
+let recognitionActive = false;
+let micEnabled = false;
+let modelMounted = false;
+let currentSessionId = null;
+let captionTimer = null;
+let pendingVoiceThenAssistant = false;
+const SILENCE_TIMEOUT_MS = 10000;
+
+/* ---------------------------- icons ---------------------------- */
+const HUMAN_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>`;
+const icon = (name, size = 19) => `<i data-lucide="${name}" style="width:${size}px;height:${size}px;"></i>`;
+
+function renderIcons() {
+  els.permIcon.innerHTML = icon("mic", 28);
+  els.btnHistory.innerHTML = icon("panel-left");
+  els.btnNewHome.innerHTML = icon("plus");
+  els.btnPersonaHome.innerHTML = icon("sparkle");
+  els.btnAttach.innerHTML = icon("plus", 18);
+  els.btnVoiceChip.insertAdjacentHTML("afterbegin", icon("audio-lines", 14));
+  els.btnMicHome.innerHTML = icon("mic", 18);
+  els.btnProfile.innerHTML = HUMAN_SVG;
+  els.btnNewAssistant.innerHTML = icon("plus");
+  els.navBack.innerHTML = icon("chevron-left") + "<span>Chat</span>";
+  els.navMore.innerHTML = icon("sliders-horizontal");
+  els.btnMic.innerHTML = icon("mic", 22);
+  els.btnDrawerClose.innerHTML = icon("x");
+  els.btnVoiceClose.innerHTML = icon("x");
+  els.btnSettingsClose.innerHTML = icon("x");
+  els.newChatIcon.innerHTML = icon("plus", 17);
+  els.addVoiceIcon.innerHTML = icon("plus", 17);
+  if (window.lucide) window.lucide.createIcons();
+}
+
+/* ---------------------------- toast ---------------------------- */
+function showToast(message, duration = 3200) {
+  if (!message) return;
+  els.toast.textContent = message;
+  els.toast.classList.add("visible");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => els.toast.classList.remove("visible"), duration);
+}
+
+/* --------------------------- screens --------------------------- */
+function showScreen(name) {
+  Object.entries(els.screens).forEach(([key, el]) => el.classList.toggle("active", key === name));
+}
+
+function goHome() {
+  stopListening();
+  voice.stop();
+  showScreen("home");
+  renderMessages();
+}
+
+function goAssistant() {
+  showScreen("assistant");
+  if (!modelMounted) { model.mount(); modelMounted = true; }
+  setAvatarState("idle");
+  if (!brain.history.length) startConversation();
+  else startListening();
+}
+
+/* --------------------- avatar / caption state ------------------- */
+function setAvatarState(state) {
+  model.setState(state);
+  if (state !== "speaking") hideCaption();
+}
+
+function showCaption(text) {
+  if (!config.get("show_captions") || !text) return;
+  els.captions.textContent = text;
+  els.captions.classList.add("visible");
+  clearTimeout(captionTimer);
+}
+function hideCaption(delay = 0) {
+  clearTimeout(captionTimer);
+  captionTimer = setTimeout(() => els.captions.classList.remove("visible"), delay);
+}
+
+/* ------------------------- overlay plumbing --------------------- */
+function anyOverlayOpen() {
+  return els.drawer.classList.contains("visible")
+    || els.sheetVoice.classList.contains("visible")
+    || els.sheetSettings.classList.contains("visible");
+}
+function syncScrim() { els.scrim.classList.toggle("visible", anyOverlayOpen()); }
+
+function openDrawer() { renderConversations(); els.drawer.classList.add("visible"); syncScrim(); }
+function closeDrawer() { els.drawer.classList.remove("visible"); syncScrim(); }
+
+function openVoiceSheet() { renderVoiceList(); els.sheetVoice.classList.add("visible"); syncScrim(); }
+function closeVoiceSheet() {
+  els.sheetVoice.classList.remove("visible");
+  els.addVoiceForm.classList.remove("visible");
+  syncScrim();
+}
+
+function openSettings() { populateSettingsForm(); els.sheetSettings.classList.add("visible"); syncScrim(); }
+function closeSettings() { els.sheetSettings.classList.remove("visible"); syncScrim(); }
+
+function closeAllPopovers() {
+  els.popPersona.classList.remove("visible");
+  els.popQuick.classList.remove("visible");
+}
+function positionPopover(pop, anchor, align = "right") {
+  pop.classList.add("visible");
+  const a = anchor.getBoundingClientRect();
+  const p = pop.getBoundingClientRect();
+  let top = a.bottom + 8;
+  if (top + p.height > window.innerHeight - 12) top = Math.max(12, a.top - p.height - 8);
+  let left = align === "right" ? a.right - p.width : a.left;
+  left = Math.min(Math.max(12, left), window.innerWidth - p.width - 12);
+  pop.style.top = `${top}px`;
+  pop.style.left = `${left}px`;
+}
+
+els.scrim.addEventListener("click", () => { closeDrawer(); closeVoiceSheet(); closeSettings(); });
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".popover")) return;
+  if (e.target.closest("#btn-persona-home,#nav-more,#quick-persona")) return;
+  closeAllPopovers();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  closeAllPopovers(); closeDrawer(); closeVoiceSheet(); closeSettings();
+});
+
+/* --------------------------- messages --------------------------- */
+function renderMessages() {
+  const session = currentSessionId ? config.getSession(currentSessionId) : null;
+  const msgs = session ? session.messages : [];
+  els.homeBody.innerHTML = "";
+  if (!msgs.length) {
+    els.homeBody.appendChild(els.homeEmpty);
+    return;
+  }
+  msgs.forEach((m) => appendMessageEl(m.role, m.content, false));
+  els.homeBody.scrollTop = els.homeBody.scrollHeight;
+}
+
+function appendMessageEl(role, text, scroll = true) {
+  if (els.homeEmpty.parentNode === els.homeBody) els.homeBody.removeChild(els.homeEmpty);
+  const div = document.createElement("div");
+  div.className = `msg ${role === "user" ? "user" : "ai"}`;
+  if (role === "user") div.textContent = text;
+  else {
+    const who = document.createElement("span");
+    who.className = "who";
+    who.textContent = "AirClia";
+    div.appendChild(who);
+    div.appendChild(document.createTextNode(text));
+  }
+  els.homeBody.appendChild(div);
+  if (scroll) els.homeBody.scrollTop = els.homeBody.scrollHeight;
+  return div;
+}
+
+function ensureSession() {
+  if (!currentSessionId) {
+    currentSessionId = config.createSession("New conversation").id;
+    brain.resetSession();
+  }
+  return currentSessionId;
+}
+
+function recordMessage(role, text) {
+  config.appendMessage(ensureSession(), role, text);
+}
+
+/* ------------------------ new conversation ---------------------- */
+function newConversation() {
+  voice.stop();
+  clearSilenceTimer();
+  hideCaption();
+  brain.resetSession();
+  currentSessionId = config.createSession("New conversation").id;
+  renderMessages();
+  closeDrawer();
+  showToast("New conversation started.");
+}
+
+function openConversation(id) {
+  const session = config.getSession(id);
+  if (!session) return;
+  voice.stop();
+  clearSilenceTimer();
+  currentSessionId = id;
+  brain.loadHistory(session.messages);
+  renderMessages();
+  closeDrawer();
+  showScreen("home");
+}
+
+/* ---------------------- conversation history -------------------- */
+function relativeGroup(ts) {
+  const d = new Date(ts), now = new Date();
+  const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((startOf(now) - startOf(d)) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return "Previous 7 days";
+  return "Older";
+}
+function relativeTime(ts) {
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+function renderConversations() {
+  const sessions = config.getSessions().filter((s) => s.messages.length || s.id === currentSessionId);
+  els.convList.innerHTML = "";
+  if (!sessions.length) {
+    els.convList.innerHTML = `<div class="empty-note">No conversations yet.</div>`;
+    return;
+  }
+  let lastGroup = null;
+  sessions.forEach((s) => {
+    const group = relativeGroup(s.ts);
+    if (group !== lastGroup) {
+      const g = document.createElement("div");
+      g.className = "drawer-group";
+      g.textContent = group;
+      els.convList.appendChild(g);
+      lastGroup = group;
+    }
+    const row = document.createElement("button");
+    row.className = "conv-row" + (s.id === currentSessionId ? " active" : "");
+    row.type = "button";
+    const main = document.createElement("div");
+    main.className = "conv-main";
+    const title = document.createElement("div");
+    title.className = "conv-title";
+    title.textContent = s.title || "Untitled";
+    const time = document.createElement("div");
+    time.className = "conv-time";
+    time.textContent = relativeTime(s.ts);
+    main.append(title, time);
+    row.appendChild(main);
+    if (s.id === currentSessionId) {
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      row.appendChild(dot);
+    }
+    row.addEventListener("click", () => openConversation(s.id));
+    els.convList.appendChild(row);
+  });
+}
+
+/* ---------------------------- personas -------------------------- */
+function renderPersonaPopover() {
+  const current = brain.getPersona();
+  els.popPersona.querySelectorAll(".pop-item").forEach((item) => {
+    const on = item.dataset.persona === current;
+    item.classList.toggle("selected", on);
+    item.setAttribute("aria-checked", String(on));
+    item.querySelector(".check").innerHTML = on ? icon("check", 16) : "";
+  });
+  if (window.lucide) window.lucide.createIcons();
+}
+
+els.popPersona.addEventListener("click", (e) => {
+  const item = e.target.closest("[data-persona]");
+  if (!item) return;
+  brain.setPersona(item.dataset.persona);
+  renderPersonaPopover();
+  closeAllPopovers();
+  showToast(`Persona: ${item.dataset.persona}.`);
+});
+
+/* ------------------------ voice selection ----------------------- */
+function currentVoiceLabel() {
+  const v = voice.getCurrentVoice();
+  return v.name || "AirClia Voice";
+}
+function syncVoiceLabels() {
+  const label = currentVoiceLabel();
+  els.voiceChipLabel.textContent = label;
+  els.btnVoiceName.textContent = label;
+}
+
+function renderVoiceList() {
+  const currentId = config.get("elevenlabs_voice_id") || "";
+  els.voiceList.innerHTML = "";
+  config.getVoices().forEach((v) => {
+    const card = document.createElement("div");
+    card.className = "voice-card" + (v.id === currentId && config.get("voice_setup_complete") ? " selected" : "");
+    const main = document.createElement("div");
+    main.className = "vc-main";
+    const name = document.createElement("div");
+    name.className = "vc-name";
+    name.textContent = v.name;
+    const desc = document.createElement("div");
+    desc.className = "vc-desc";
+    desc.textContent = v.description;
+    main.append(name, desc);
+    const btn = document.createElement("button");
+    btn.className = "vc-select";
+    btn.type = "button";
+    btn.textContent = v.id === currentId && config.get("voice_setup_complete") ? "Selected" : "Select";
+    btn.setAttribute("aria-label", `Select ${v.name}`);
+    btn.addEventListener("click", () => selectVoice(v));
+    card.append(main, btn);
+    els.voiceList.appendChild(card);
+  });
+}
+
+function selectVoice(v) {
+  voice.setVoice(v);
+  syncVoiceLabels();
+  renderVoiceList();
+  showToast(`Voice set to ${v.name}.`);
+  closeVoiceSheet();
+  if (pendingVoiceThenAssistant) {
+    pendingVoiceThenAssistant = false;
+    config.set("onboarding_complete", true);
+    config.save();
+    goAssistant();
+  }
+}
+
+els.btnAddVoice.addEventListener("click", () => {
+  els.addVoiceForm.classList.toggle("visible");
+  if (els.addVoiceForm.classList.contains("visible")) els.inputNewVoiceId.focus();
+});
+
+els.btnSaveVoice.addEventListener("click", () => {
+  const id = els.inputNewVoiceId.value.trim();
+  if (!id) { showToast("Paste an ElevenLabs Voice ID first."); return; }
+  const entry = config.addCustomVoice({ id, name: els.inputNewVoiceName.value.trim() });
+  els.inputNewVoiceId.value = "";
+  els.inputNewVoiceName.value = "";
+  els.addVoiceForm.classList.remove("visible");
+  if (entry) selectVoice(entry);
+});
+
+/* ---------------------------- settings -------------------------- */
+function populateSettingsForm() {
+  els.inputOrKey.value = config.get("openrouter_api_key") || "";
+  els.inputOrModel.value = config.get("openrouter_model") || "";
+  els.inputElKey.value = config.get("elevenlabs_api_key") || "";
+  els.inputElVoice.value = config.get("elevenlabs_voice_id") || "";
+  els.toggleCaptions.checked = Boolean(config.get("show_captions"));
+  els.toggleCaptionsQuick.checked = Boolean(config.get("show_captions"));
+  setRoastChip(config.get("roast_intensity") || "normal");
+}
+
+function setRoastChip(value) {
+  [...els.roastOptions.children].forEach((chip) => {
+    const on = chip.dataset.value === value;
+    chip.classList.toggle("selected", on);
+    chip.setAttribute("aria-pressed", String(on));
+  });
+}
+
+els.roastOptions.addEventListener("click", (e) => {
+  const chip = e.target.closest(".seg-item");
+  if (chip) setRoastChip(chip.dataset.value);
+});
+
+els.btnSettingsSave.addEventListener("click", () => {
+  config.setMany({
+    openrouter_api_key: els.inputOrKey.value.trim(),
+    openrouter_model: els.inputOrModel.value.trim(),
+    elevenlabs_api_key: els.inputElKey.value.trim(),
+    elevenlabs_voice_id: els.inputElVoice.value.trim(),
+    show_captions: els.toggleCaptions.checked,
+    roast_intensity: els.roastOptions.querySelector(".selected")?.dataset.value || "normal"
+  });
+  config.save();
+  els.toggleCaptionsQuick.checked = els.toggleCaptions.checked;
+  syncVoiceLabels();
+  showToast("Settings saved.");
+  closeSettings();
+
+  // First-run: once the AI is configured, continue to voice selection.
+  if (!config.get("onboarding_complete") && config.canRunWithFallback()) {
+    pendingVoiceThenAssistant = true;
+    openVoiceSheet();
+  }
+});
+
+els.btnTestVoice.addEventListener("click", async () => {
+  const prevKey = config.get("elevenlabs_api_key");
+  const prevVoice = config.get("elevenlabs_voice_id");
+  try {
+    config.set("elevenlabs_api_key", els.inputElKey.value.trim());
+    config.set("elevenlabs_voice_id", els.inputElVoice.value.trim());
+    await voice.testVoice();
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "Couldn't reach ElevenLabs.");
+  } finally {
+    // Save button is what actually commits changes.
+    config.set("elevenlabs_api_key", prevKey);
+    config.set("elevenlabs_voice_id", prevVoice);
+  }
+});
+
+function onCaptionsToggle(checked) {
+  config.set("show_captions", checked);
+  config.save();
+  els.toggleCaptions.checked = checked;
+  els.toggleCaptionsQuick.checked = checked;
+  if (!checked) els.captions.classList.remove("visible");
+}
+els.toggleCaptions.addEventListener("change", (e) => onCaptionsToggle(e.target.checked));
+els.toggleCaptionsQuick.addEventListener("change", (e) => onCaptionsToggle(e.target.checked));
+
+/* -------------------------- header wiring ------------------------ */
+els.btnHistory.addEventListener("click", openDrawer);
+els.btnDrawerClose.addEventListener("click", closeDrawer);
+els.btnNewDrawer.addEventListener("click", newConversation);
+els.btnNewHome.addEventListener("click", newConversation);
+els.btnNewAssistant.addEventListener("click", () => { newConversation(); startConversation(); });
+els.btnPersonaHome.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = els.popPersona.classList.contains("visible");
+  closeAllPopovers();
+  if (!open) { renderPersonaPopover(); positionPopover(els.popPersona, els.btnPersonaHome); }
+});
+els.navMore.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = els.popQuick.classList.contains("visible");
+  closeAllPopovers();
+  if (!open) { els.toggleCaptionsQuick.checked = Boolean(config.get("show_captions")); positionPopover(els.popQuick, els.navMore, "left"); }
+});
+$("quick-persona").addEventListener("click", (e) => {
+  e.stopPropagation();
+  closeAllPopovers();
+  renderPersonaPopover();
+  positionPopover(els.popPersona, els.navMore, "left");
+});
+$("quick-settings").addEventListener("click", () => { closeAllPopovers(); openSettings(); });
+els.btnAttach.addEventListener("click", (e) => {
+  e.stopPropagation();
+  closeAllPopovers();
+  els.toggleCaptionsQuick.checked = Boolean(config.get("show_captions"));
+  positionPopover(els.popQuick, els.btnAttach, "left");
+});
+els.btnVoiceChip.addEventListener("click", openVoiceSheet);
+els.btnVoiceName.addEventListener("click", openVoiceSheet);
+els.btnProfile.addEventListener("click", openVoiceSheet);
+els.btnVoiceClose.addEventListener("click", () => { pendingVoiceThenAssistant = false; closeVoiceSheet(); });
+els.btnSettingsClose.addEventListener("click", closeSettings);
+els.navBack.addEventListener("click", goHome);
+
+/* ------------------------ text composer -------------------------- */
+function autoGrow() {
+  els.composerInput.style.height = "auto";
+  els.composerInput.style.height = `${Math.min(132, els.composerInput.scrollHeight)}px`;
+}
+els.composerInput.addEventListener("input", autoGrow);
+els.composerInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendTypedMessage(); }
+});
+
+async function sendTypedMessage() {
+  const text = els.composerInput.value.trim();
+  if (!text) return;
+  if (!config.canRunWithFallback()) {
+    showToast("Add your OpenRouter key to start chatting.");
+    openSettings();
+    return;
+  }
+  els.composerInput.value = "";
+  autoGrow();
+  appendMessageEl("user", text);
+  recordMessage("user", text);
+  config.addHistoryEntry(text);
+
+  const pending = appendMessageEl("assistant", "…");
+  pending.classList.add("pending");
+  const result = await brain.respond(text);
+  pending.classList.remove("pending");
+  pending.textContent = "";
+  const who = document.createElement("span");
+  who.className = "who";
+  who.textContent = "AirClia";
+  pending.append(who, document.createTextNode(result.text));
+  els.homeBody.scrollTop = els.homeBody.scrollHeight;
+  recordMessage("assistant", result.text);
+  if (result.type === "fallback") showToast("My brain glitched for a second. Give me a sec.");
+}
+
+els.btnMicHome.addEventListener("click", () => {
+  if (!config.canRunWithFallback()) { showToast("Add your OpenRouter key first."); openSettings(); return; }
+  if (!config.hasVoiceSelected()) { pendingVoiceThenAssistant = true; openVoiceSheet(); return; }
+  goAssistant();
+});
+
+/* --------------------- microphone permission --------------------- */
+async function requestMicPermission() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop()); // we only needed the permission grant
+    els.permError.classList.remove("visible");
+    els.btnRetryMic.style.display = "none";
+    config.set("microphone_setup_complete", true);
+    config.save();
+    continueAfterPermission();
+  } catch (err) {
+    console.error("[AirC] Mic permission denied.", err);
+    els.permError.classList.add("visible");
+    els.btnRetryMic.style.display = "inline-flex";
+  }
+}
+els.btnAllowMic.addEventListener("click", requestMicPermission);
+els.btnRetryMic.addEventListener("click", requestMicPermission);
+
+function continueAfterPermission() {
+  showScreen("home");
+  renderMessages();
+  if (!config.canRunWithFallback()) {
+    openSettings();
+    showToast("Add your API keys to get started.");
+    return;
+  }
+  if (!config.hasVoiceSelected()) {
+    pendingVoiceThenAssistant = true;
+    openVoiceSheet();
+    return;
+  }
+  config.set("onboarding_complete", true);
+  config.save();
+  goAssistant();
+}
+
+/* ------------------------ speech recognition --------------------- */
+function setupRecognition() {
+  const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognitionImpl) {
+    showToast("This browser doesn't support speech recognition.");
+    return null;
+  }
+
+  const rec = new SpeechRecognitionImpl();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = "en-US";
+
+  rec.onstart = () => { recognitionActive = true; };
+
+  rec.onresult = (event) => {
+    let finalTranscript = "";
+    let interimTranscript = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) finalTranscript += transcript;
+      else interimTranscript += transcript;
+    }
+    if (interimTranscript.trim().length > 0 && voice.isSpeaking()) {
+      // The user started talking while AirClia is speaking — interrupt NOW.
+      handleUserInterrupt();
+    }
+    if (finalTranscript.trim().length > 0) handleUserFinalTranscript(finalTranscript.trim());
+  };
+
+  rec.onerror = (event) => {
+    console.warn("[AirC] Recognition error:", event.error);
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      showToast("Mic access needed for AirC to work.");
+    }
+    // no-speech / aborted / network are recoverable — onend restarts it.
+  };
+
+  rec.onend = () => {
+    recognitionActive = false;
+    // Browsers stop recognition unexpectedly — restart automatically
+    // while the mic is meant to be on. No start/stop sounds are ever played.
+    if (micEnabled) {
+      try { rec.start(); }
+      catch (err) {
+        setTimeout(() => { if (micEnabled) { try { rec.start(); } catch (e) {} } }, 400);
+      }
+    }
+  };
+
+  return rec;
+}
+
+function startListening() {
+  if (!recognition) recognition = setupRecognition();
+  if (!recognition) return;
+  micEnabled = true;
+  els.btnMic.classList.add("is-listening");
+  els.btnMic.setAttribute("aria-pressed", "true");
+  if (!recognitionActive) { try { recognition.start(); } catch (err) {} }
+  if (model.getState() !== "speaking") setAvatarState("listening");
+  resetSilenceTimer();
+}
+
+function stopListening() {
+  micEnabled = false;
+  els.btnMic.classList.remove("is-listening");
+  els.btnMic.setAttribute("aria-pressed", "false");
+  clearSilenceTimer();
+  if (recognition && recognitionActive) recognition.stop();
+}
+
+els.btnMic.addEventListener("click", () => {
+  if (micEnabled) { stopListening(); setAvatarState("idle"); }
+  else startListening();
+});
+
+/* --------------------------- silence ---------------------------- */
+function resetSilenceTimer() {
+  clearSilenceTimer();
+  if (!micEnabled) return;
+  silenceTimer = setTimeout(onSilenceTimeout, SILENCE_TIMEOUT_MS);
+}
+function clearSilenceTimer() {
+  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+}
+async function onSilenceTimeout() {
+  if (!micEnabled || voice.isSpeaking()) return;
+  const result = await brain.handleSilence();
+  recordMessage("assistant", result.text);
+  await speakResponse(result.text);
+}
+
+/* ----------------------- conversation flow ----------------------- */
+async function startConversation() {
+  if (!brain.history.length) {
+    ensureSession();
+    const opener = await brain.openingLine();
+    recordMessage("assistant", opener.text);
+    await speakResponse(opener.text);
+  }
+  startListening();
+}
+
+async function handleUserFinalTranscript(text) {
+  clearSilenceTimer();
+  config.addHistoryEntry(text);
+  recordMessage("user", text);
+  setAvatarState("thinking");
+  const result = await brain.respond(text);
+
+  if (result.type === "roast") model.setEmotion("joy");
+  else if (result.type === "supportive") model.setEmotion("happy");
+  else model.setEmotion("neutral");
+
+  recordMessage("assistant", result.text);
+  if (result.type === "fallback") showToast("My brain glitched for a second. Give me a sec.");
+  await speakResponse(result.text);
+}
+
+function handleUserInterrupt() {
+  voice.stop();
+  hideCaption();
+  setAvatarState("listening");
+  resetSilenceTimer();
+}
+
+async function speakResponse(text) {
+  setAvatarState("speaking");
+  showCaption(text);
+
+  voice.onStart = () => {
+    // Attach lip-sync once playback has actually begun — getAudioElement()
+    // returns null for the browser-TTS fallback, which AirCModel handles
+    // with a procedural mouth-movement approximation.
+    model.attachAudioElement(voice.getAudioElement());
+  };
+  voice.onEnd = () => {
+    model.triggerNod();
+    hideCaption(1400);
+    if (micEnabled) { setAvatarState("listening"); resetSilenceTimer(); }
+    else setAvatarState("idle");
+  };
+  voice.onError = (kind) => {
+    if (kind === "elevenlabs") showToast("ElevenLabs hiccuped — using the browser voice.");
+  };
+
+  await voice.speak(text);
+}
+
+/* ------------------------------ boot ----------------------------- */
+function boot() {
+  renderIcons();
+  syncVoiceLabels();
+  renderPersonaPopover();
+  populateSettingsForm();
+
+  const sessions = config.getSessions();
+  currentSessionId = sessions.length ? sessions[0].id : null;
+  if (currentSessionId) brain.loadHistory(config.getSession(currentSessionId).messages);
+  renderMessages();
+
+  if (!config.get("microphone_setup_complete")) {
+    showScreen("permission");
+    return;
+  }
+  // Setup already done — go straight to the default chat home.
+  showScreen("home");
+  if (!config.canRunWithFallback()) {
+    openSettings();
+  } else if (!config.hasVoiceSelected()) {
+    pendingVoiceThenAssistant = false;
+  }
+}
+
+window.addEventListener("beforeunload", () => {
+  voice.stop();
+  clearSilenceTimer();
+  micEnabled = false;
+  if (recognition && recognitionActive) { try { recognition.stop(); } catch (e) {} }
+});
+
+boot();
+</script>
+</body>
+</html>
