@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>AirClia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+    :root {
+        --bg-top: #FFFFFF;
+        --bg-bottom: #F5F6FB;
+        --primary-1: #B8C4FF;
+        --primary-2: #8FA6FF;
+        --secondary: #FFC9DE;
+        --ink: #1C1C22;
+        --text: #2B2B33;
+        --muted: #8A8A95;
+        --line: #ECECF3;
+        --error: #FF8080;
+        --card: #FFFFFF;
+        --font-display: "Poppins", "Inter", sans-serif;
+        --font-body: "Inter", "Poppins", sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        overflow: hidden;
+        font-family: var(--font-body);
+        color: var(--text);
+        background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    }
+
+    #app { position: relative; width: 100%; height: 100%; }
+
+    /* ---------- Screens ---------- */
+    .airc-screen {
+        position: absolute; inset: 0; display: none;
+        flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 400ms ease-in-out;
+    }
+    .airc-screen.active { display: flex; }
+
+    /* ---------- Splash ---------- */
+    #screen-splash { gap: 14px; }
+    .airc-splash-blob {
+        width: 120px; height: 120px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(184,196,255,0.7) 0%, rgba(255,201,222,0.35) 55%, rgba(255,255,255,0) 75%);
+        filter: blur(4px); margin-bottom: 6px;
+        animation: airc-breathe 4s ease-in-out infinite;
+    }
+    .airc-logo {
+        font-family: var(--font-display); font-weight: 800; font-size: 40px; letter-spacing: -0.5px;
+        background: linear-gradient(135deg, var(--primary-2), var(--secondary));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .airc-tagline { color: var(--muted); font-size: 14.5px; margin-top: -8px; margin-bottom: 8px; }
+    #screen-splash .airc-tagline { margin-bottom: 26px; }
+    .airc-dots { display: flex; gap: 6px; align-items: center; }
+    .airc-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--line); transition: all 250ms ease; }
+    .airc-dots span.active { width: 18px; border-radius: 4px; background: var(--primary-2); }
+
+    .airc-btn {
+        font-family: var(--font-body); font-weight: 600; font-size: 15px; border: none; border-radius: 999px;
+        padding: 14px 28px; cursor: pointer; background: var(--ink); color: #fff;
+        box-shadow: 0 10px 26px rgba(28,28,34,0.18);
+        transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
+    }
+    .airc-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(28,28,34,0.24); }
+    .airc-btn:active { transform: translateY(0) scale(0.98); }
+    .airc-btn-gradient { background: linear-gradient(135deg, var(--primary-1), var(--primary-2)); box-shadow: 0 10px 26px rgba(143,166,255,0.35); }
+    .airc-btn-ghost { background: transparent; color: var(--muted); box-shadow: none; border: 1px solid var(--line); }
+    .airc-btn-wide { width: min(280px, 78vw); }
+    .airc-error-msg { color: var(--error); font-size: 13px; margin-top: 6px; display: none; }
+    .airc-error-msg.visible { display: block; }
+
+    /* ---------- Permission screen (premium card) ---------- */
+    #screen-permission { padding: 32px; text-align: center; gap: 16px; }
+    .airc-permission-card {
+        width: min(300px, 82vw);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 22px 20px;
+        box-shadow: 0 18px 40px rgba(28,28,34,0.08);
+        display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .airc-permission-row {
+        display: flex; align-items: center; gap: 10px;
+        font-weight: 600; font-size: 15.5px; color: var(--ink);
+    }
+    .airc-permission-row .airc-wave-icon {
+        width: 30px; height: 30px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(circle, rgba(184,196,255,0.55) 0%, rgba(255,201,222,0.2) 60%, rgba(255,255,255,0) 78%);
+        color: var(--primary-2);
+    }
+    .airc-permission-title { font-family: var(--font-display); font-weight: 700; font-size: 19px; margin-top: 4px; }
+    .airc-permission-subtitle { color: var(--muted); font-size: 13.5px; margin-top: -6px; }
+
+    /* ---------- Voice select screen ---------- */
+    #screen-voice-select .airc-overlay-body { padding-top: 88px; }
+    .airc-voice-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .airc-voice-card {
+        background: #fff; border: 1px solid var(--line); border-radius: 20px;
+        padding: 18px 14px; display: flex; flex-direction: column; gap: 10px;
+        box-shadow: 0 10px 28px rgba(28,28,34,0.06);
+    }
+    .airc-voice-card-name { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; }
+    .airc-voice-card-desc { color: var(--muted); font-size: 12.5px; line-height: 1.4; min-height: 32px; }
+    .airc-voice-select-btn {
+        border: none; border-radius: 999px; padding: 9px 0; width: 100%;
+        background: var(--ink); color: #fff; font-weight: 600; font-size: 13px; cursor: pointer;
+        transition: transform 180ms ease, background 200ms ease;
+    }
+    .airc-voice-select-btn:active { transform: scale(0.96); }
+    .airc-voice-card.selected { border-color: var(--primary-2); box-shadow: 0 0 0 2px rgba(143,166,255,0.25), 0 10px 28px rgba(28,28,34,0.06); }
+    .airc-voice-card.selected .airc-voice-select-btn { background: linear-gradient(135deg, var(--primary-1), var(--primary-2)); }
+    .airc-voice-card-custom { grid-column: 1 / -1; }
+    .airc-voice-custom-head { display: flex; align-items: center; justify-content: space-between; }
+    .airc-badge-add {
+        background: var(--ink); color: #fff; font-size: 11px; font-weight: 700;
+        border-radius: 999px; padding: 5px 11px;
+    }
+    .airc-voice-card-custom input {
+        width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line);
+        font-size: 13.5px; font-family: var(--font-body); background: #FBFBFE; color: var(--text); margin-bottom: 8px;
+    }
+    .airc-voice-hint { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 18px; }
+    .airc-voice-hint a { color: var(--primary-2); font-weight: 600; cursor: pointer; text-decoration: none; }
+
+    /* ---------- Toast ---------- */
+    #toast {
+        position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+        background: var(--ink); color: #fff; font-size: 14px; padding: 10px 18px; border-radius: 999px;
+        opacity: 0; transition: opacity 350ms ease-in-out, transform 350ms ease-in-out;
+        z-index: 60; max-width: 85%; text-align: center;
+    }
+    #toast.visible { opacity: 1; transform: translateX(-50%) translateY(4px); }
+
+    /* ---------- Settings panel (premium) ---------- */
+    #settings-overlay {
+        position: absolute; inset: 0; background: rgba(28,28,34,0.28);
+        opacity: 0; pointer-events: none; transition: opacity 350ms ease-in-out; z-index: 40;
+        backdrop-filter: blur(2px);
+    }
+    #settings-overlay.visible { opacity: 1; pointer-events: auto; }
+    #settings-panel {
+        position: absolute; top: 0; right: 0; width: min(380px, 88vw); height: 100%;
+        background: #FFFFFF; box-shadow: -16px 0 44px rgba(28,28,34,0.14);
+        transform: translateX(100%); transition: transform 380ms cubic-bezier(.22,1,.36,1);
+        z-index: 41; overflow-y: auto; padding: 26px 22px 110px;
+    }
+    #settings-panel.visible { transform: translateX(0%); }
+    .settings-title { font-family: var(--font-display); font-weight: 700; font-size: 21px; margin-bottom: 20px; }
+    .settings-section { margin-bottom: 22px; }
+    .settings-section h3 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 700; }
+    .settings-field { margin-bottom: 12px; }
+    .settings-field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
+    .settings-field input, .settings-field select {
+        width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line);
+        font-size: 14px; font-family: var(--font-body); background: #FBFBFE; color: var(--text);
+        transition: border-color 180ms ease;
+    }
+    .settings-field input:focus { outline: none; border-color: var(--primary-2); }
+    .settings-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+    .settings-hint { font-size: 11.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+    .switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-track { position: absolute; inset: 0; background: var(--line); border-radius: 999px; cursor: pointer; transition: background 200ms ease; }
+    .switch-track::before {
+        content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px;
+        background: #fff; border-radius: 50%; transition: transform 200ms ease; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .switch input:checked + .switch-track { background: var(--primary-2); }
+    .switch input:checked + .switch-track::before { transform: translateX(18px); }
+    .settings-actions { position: sticky; bottom: 0; background: #fff; padding-top: 14px; display: flex; gap: 10px; }
+    .settings-actions .airc-btn { flex: 1; padding: 12px 0; font-size: 14px; text-align: center; }
+    #settings-close { position: absolute; top: 22px; right: 20px; background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; }
+
+    /* ---------- Top bar ---------- */
+    .airc-topbar {
+        position: absolute; top: 0; left: 0; right: 0;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 16px 0; z-index: 15;
+    }
+    .airc-topbar-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
+    .airc-icon-circle {
+        width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(28,28,34,0.9); color: #fff;
+        box-shadow: 0 4px 14px rgba(28,28,34,0.18);
+        transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+    .airc-icon-circle:active { transform: scale(0.9); }
+    .airc-icon-circle-light { background: rgba(255,255,255,0.92); color: var(--text); border: 1px solid var(--line); }
+    .airc-header-actions { display: flex; align-items: center; gap: 8px; position: relative; }
+    .airc-icon-circle-sm { width: 36px; height: 36px; }
+
+    /* ---------- Persona dropdown ---------- */
+    #persona-dropdown {
+        position: absolute; top: 48px; right: 46px; width: 190px;
+        background: #fff; border-radius: 16px; box-shadow: 0 14px 34px rgba(28,28,34,0.16);
+        border: 1px solid var(--line); padding: 8px; z-index: 25;
+        opacity: 0; transform: translateY(-6px) scale(0.97); pointer-events: none;
+        transition: all 220ms cubic-bezier(.22,1,.36,1);
+    }
+    #persona-dropdown.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .persona-option {
+        display: flex; flex-direction: column; gap: 1px; padding: 9px 10px; border-radius: 10px; cursor: pointer;
+        transition: background 160ms ease;
+    }
+    .persona-option:hover, .persona-option:active { background: #F5F6FB; }
+    .persona-option.selected { background: linear-gradient(135deg, rgba(184,196,255,0.25), rgba(255,201,222,0.2)); }
+    .persona-option-name { font-weight: 600; font-size: 13.5px; }
+    .persona-option-desc { font-size: 11.5px; color: var(--muted); }
+
+    /* ---------- Status / response card ---------- */
+    #status-card {
+        position: absolute; left: 16px; right: 16px; bottom: 108px;
+        background: #fff; border-radius: 22px; padding: 14px 18px 16px;
+        box-shadow: 0 14px 34px rgba(28,28,34,0.1); z-index: 8;
+        transition: opacity 300ms ease;
+    }
+    .airc-card-handle { width: 36px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 10px; }
+    .airc-card-dots { display: none; gap: 4px; margin-bottom: 6px; }
+    .airc-card-dots.visible { display: flex; }
+    .airc-card-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--primary-2); opacity: 0.35; animation: airc-dot-pulse 1.2s ease-in-out infinite; }
+    .airc-card-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .airc-card-dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes airc-dot-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    .airc-card-title { font-weight: 700; font-size: 15px; }
+    .airc-card-subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .airc-card-response { display: none; font-size: 14.5px; line-height: 1.5; margin-top: 2px; max-height: 4.6em; overflow: hidden; position: relative; }
+    .airc-card-response.visible { display: block; }
+    .airc-card-response.expanded { max-height: none; }
+    .airc-card-response.expandable { cursor: pointer; padding-right: 22px; }
+    .airc-card-chevron { position: absolute; right: 0; top: 2px; color: var(--muted); transition: transform 250ms ease; }
+    .airc-card-response.expanded .airc-card-chevron { transform: rotate(180deg); }
+
+    /* ---------- Model / avatar ---------- */
+    #model-container { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .airc-model-glow {
+        position: absolute; width: 70vmin; height: 70vmin; max-width: 520px; max-height: 520px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(184,196,255,0.55) 0%, rgba(255,201,222,0.25) 45%, rgba(255,255,255,0) 72%);
+        filter: blur(2px); opacity: 0.55; transform: scale(1);
+        transition: opacity 500ms ease-in-out, transform 2.6s ease-in-out; pointer-events: none;
+    }
+    .airc-state-idle .airc-model-glow { opacity: 0.35; animation: airc-breathe 6s ease-in-out infinite; }
+    .airc-state-listening .airc-model-glow { opacity: 0.45; animation: airc-shimmer 3.2s ease-in-out infinite; }
+    .airc-state-thinking .airc-model-glow { opacity: 0.28; animation: none; transform: scale(0.97); }
+    .airc-state-speaking .airc-model-glow {
+        opacity: 0.75; background: radial-gradient(circle, rgba(143,166,255,0.75) 0%, rgba(255,201,222,0.3) 45%, rgba(255,255,255,0) 72%);
+        animation: airc-speak-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes airc-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+    @keyframes airc-shimmer { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.5; } }
+    @keyframes airc-speak-pulse { 0%, 100% { transform: scale(1); opacity: 0.65; } 50% { transform: scale(1.08); opacity: 0.85; } }
+    @media (prefers-reduced-motion: reduce) { .airc-model-glow { animation: none !important; transition: opacity 300ms ease; } }
+
+    /* ---------- Bottom row: nav pill + fab ---------- */
+    .airc-bottom-row {
+        position: absolute; left: 16px; right: 16px; bottom: 22px;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 10;
+    }
+    .airc-bottom-nav {
+        flex: 1; position: relative; display: flex; align-items: center; gap: 4px;
+        background: #fff; border-radius: 999px; padding: 8px;
+        box-shadow: 0 10px 28px rgba(28,28,34,0.1);
+    }
+    .airc-nav-pill-slide {
+        position: absolute; top: 8px; bottom: 8px; left: 8px;
+        width: calc(50% - 8px);
+        background: var(--ink); border-radius: 999px;
+        transition: transform 320ms cubic-bezier(.22,1,.36,1);
+        z-index: 0;
+    }
+    .airc-nav-item {
+        position: relative; z-index: 1; border: none; background: transparent; cursor: pointer;
+        color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 10px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+        transition: color 220ms ease; flex: 1; min-width: 0;
+    }
+    .airc-nav-item span.nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 92px; }
+    .airc-nav-item.active { color: #fff; }
+    .airc-nav-item svg, .airc-nav-item i { flex-shrink: 0; }
+    .airc-fab {
+        width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--ink); color: #fff;
+        box-shadow: 0 10px 26px rgba(28,28,34,0.24);
+        transition: transform 260ms cubic-bezier(.22,1,.36,1), box-shadow 260ms ease, background 260ms ease;
+        flex-shrink: 0;
+    }
+    .airc-fab:active { transform: scale(0.92); }
+    .airc-fab.is-listening {
+        background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+        box-shadow: 0 0 0 7px rgba(143,166,255,0.16), 0 10px 26px rgba(143,166,255,0.35);
+        animation: airc-fab-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes airc-fab-pulse {
+        0%, 100% { box-shadow: 0 0 0 7px rgba(143,166,255,0.16), 0 10px 26px rgba(143,166,255,0.35); }
+        50% { box-shadow: 0 0 0 11px rgba(143,166,255,0.1), 0 10px 26px rgba(143,166,255,0.35); }
+    }
+
+    /* ---------- Captions quick dropup ---------- */
+    #captions-dropup {
+        position: absolute; bottom: 86px; right: 16px; width: 210px;
+        background: #fff; border-radius: 16px; box-shadow: 0 14px 34px rgba(28,28,34,0.16);
+        border: 1px solid var(--line); padding: 14px 16px; z-index: 25;
+        opacity: 0; transform: translateY(8px) scale(0.97); pointer-events: none;
+        transition: all 220ms cubic-bezier(.22,1,.36,1);
+    }
+    #captions-dropup.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    #captions-dropup .settings-toggle-row { padding: 0; }
+    #captions-dropup label { font-size: 13.5px; font-weight: 600; }
+
+    /* ---------- History screen ---------- */
+    .airc-screen-overlay {
+        position: absolute; inset: 0; display: flex; flex-direction: column;
+        background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+        transform: translateX(100%); transition: transform 380ms cubic-bezier(.22,1,.36,1); z-index: 30;
+    }
+    .airc-screen-overlay.active { transform: translateX(0); }
+    .airc-overlay-body { padding: 84px 20px 24px; overflow-y: auto; height: 100%; }
+    .airc-history-list { display: flex; flex-direction: column; gap: 2px; }
+    .airc-history-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px; border-bottom: 1px solid var(--line); }
+    .airc-history-text { font-size: 14.5px; font-weight: 500; }
+    .airc-history-time { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .airc-history-empty { color: var(--muted); font-size: 14px; text-align: center; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+    <!-- Splash Screen -->
+    <div id="screen-splash" class="airc-screen active">
+        <div class="airc-splash-blob"></div>
+        <div class="airc-logo">AirClia</div>
+        <div class="airc-tagline">Your AI companion that listens and helps.</div>
+        <div class="airc-dots"><span class="active"></span><span></span><span></span></div>
+    </div>
+
+    <!-- Permission Screen -->
+    <div id="screen-permission" class="airc-screen">
+        <div class="airc-logo" style="font-size:26px;margin-bottom:4px;">AirClia</div>
+        <div class="airc-permission-card">
+            <div class="airc-permission-row">
+                <span class="airc-wave-icon" id="permission-icon"></span>
+                <span>Microphone</span>
+            </div>
+            <button id="btn-allow-mic" class="airc-btn" style="width:100%;">proceed</button>
+        </div>
+        <div id="permission-error" class="airc-error-msg">Mic access needed for AirClia to work.</div>
+        <button id="btn-retry-mic" class="airc-btn airc-btn-ghost" style="display:none;">Try Again</button>
+        <div class="airc-dots" style="margin-top:8px;"><span></span><span class="active"></span><span></span></div>
+    </div>
+
+    <!-- Main Screen -->
+    <div id="screen-main" class="airc-screen">
+        <div id="model-container"></div>
+
+        <div class="airc-topbar">
+            <button id="btn-back-main" class="airc-icon-circle" aria-label="History"></button>
+            <div class="airc-topbar-title">AirClia</div>
+            <div class="airc-header-actions">
+                <button id="btn-persona" class="airc-icon-circle airc-icon-circle-light airc-icon-circle-sm" aria-label="Persona"></button>
+                <button id="btn-new-chat" class="airc-icon-circle airc-icon-circle-sm" aria-label="New chat"></button>
+                <button id="btn-open-settings" class="airc-icon-circle airc-icon-circle-light airc-icon-circle-sm" aria-label="Settings"></button>
+                <div id="persona-dropdown"></div>
+            </div>
+        </div>
+
+        <div id="status-card">
+            <div class="airc-card-handle"></div>
+            <div class="airc-card-dots" id="card-dots"><span></span><span></span><span></span></div>
+            <div class="airc-card-title" id="card-title">How can I help you today?</div>
+            <div class="airc-card-subtitle" id="card-subtitle">Tap the mic and start talking.</div>
+            <div class="airc-card-response" id="card-response"></div>
+        </div>
+
+        <div id="captions-dropup">
+            <div class="settings-toggle-row">
+                <label for="toggle-captions-quick">Show Captions</label>
+                <div class="switch">
+                    <input type="checkbox" id="toggle-captions-quick" />
+                    <span class="switch-track"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="airc-bottom-row">
+            <div class="airc-bottom-nav">
+                <div class="airc-nav-pill-slide" id="nav-pill-slide"></div>
+                <button class="airc-nav-item active" id="nav-home" aria-label="Voice"></button>
+                <button class="airc-nav-item" id="nav-settings" aria-label="Settings"></button>
+            </div>
+            <button id="btn-mic" class="airc-fab" aria-label="Toggle microphone"></button>
+        </div>
+    </div>
+
+    <!-- Voice Select Screen -->
+    <div id="screen-voice-select" class="airc-screen-overlay">
+        <div class="airc-topbar">
+            <button id="btn-voice-back" class="airc-icon-circle" aria-label="Back"></button>
+            <div class="airc-topbar-title">Choose a voice</div>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="airc-overlay-body">
+            <div class="airc-voice-grid" id="voice-grid"></div>
+            <div class="airc-voice-hint">Need an ElevenLabs key first? <a id="voice-hint-settings">Open settings</a></div>
+        </div>
+    </div>
+
+    <!-- History Screen -->
+    <div id="screen-history" class="airc-screen-overlay">
+        <div class="airc-topbar">
+            <button id="btn-history-back" class="airc-icon-circle" aria-label="Back"></button>
+            <div class="airc-topbar-title">History</div>
+            <button id="btn-history-clear" class="airc-icon-circle airc-icon-circle-light" aria-label="Clear history"></button>
+        </div>
+        <div class="airc-overlay-body">
+            <div class="airc-history-list" id="history-list"></div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <!-- Settings -->
+    <div id="settings-overlay"></div>
+    <div id="settings-panel">
+        <button id="settings-close" aria-label="Close settings"></button>
+        <div class="settings-title">Settings</div>
+
+        <div class="settings-section">
+            <h3>OpenRouter</h3>
+            <div class="settings-field">
+                <label for="input-or-key">API Key</label>
+                <input type="password" id="input-or-key" placeholder="sk-or-..." autocomplete="off" />
+            </div>
+            <div class="settings-field">
+                <label for="input-or-model">Model</label>
+                <input type="text" id="input-or-model" placeholder="openai/gpt-4o-mini" autocomplete="off" />
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>ElevenLabs</h3>
+            <div class="settings-field">
+                <label for="input-el-key">API Key</label>
+                <input type="password" id="input-el-key" placeholder="ElevenLabs API key" autocomplete="off" />
+            </div>
+            <div class="settings-field">
+                <label for="input-el-voice">Voice ID</label>
+                <input type="text" id="input-el-voice" placeholder="Voice ID" autocomplete="off" />
+            </div>
+            <button id="btn-test-voice" class="airc-btn airc-btn-ghost" style="width:100%;">Test Voice</button>
+            <button id="btn-pick-voice" class="airc-btn airc-btn-ghost" style="width:100%;margin-top:8px;">Browse Voices</button>
+        </div>
+
+        <div class="settings-section">
+            <h3>Preferences</h3>
+            <div class="settings-toggle-row">
+                <label for="toggle-captions">Show Captions</label>
+                <div class="switch">
+                    <input type="checkbox" id="toggle-captions" />
+                    <span class="switch-track"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-hint">
+            Your API keys are stored only in this browser (localStorage) and are sent directly from your device to OpenRouter / ElevenLabs. AirClia has no server of its own.
+        </div>
+
+        <div class="settings-actions">
+            <button id="btn-settings-save" class="airc-btn">Save</button>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+import { AirCConfig } from "./config/config.js";
+import { AirCModel } from "./model/model.js";
+import { AirCVoice } from "./voice/voice.js";
+import { AirCBrain } from "./brain/brain.js";
+
+// ---------------------------------------------------------------------------
+// Setup
+// ---------------------------------------------------------------------------
+const config = new AirCConfig();
+const brain = new AirCBrain(config);
+const voice = new AirCVoice(config);
+const model = new AirCModel(document.getElementById("model-container"));
+
+const FREE_VOICES = [
+    { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", desc: "Calm, clear narration" },
+    { id: "AZnzlk1XvdvUeBnXmlld", name: "Domi", desc: "Strong and confident" },
+    { id: "EXAVITQu4vr4xnSDxMaL", name: "Bella", desc: "Soft and friendly" },
+    { id: "ErXwobaYiN019PkySvjV", name: "Antoni", desc: "Warm, well-rounded" },
+    { id: "MF3mGyEYCl7XYWbV9V6O", name: "Elli", desc: "Youthful and expressive" },
+    { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", desc: "Deep, grounded tone" }
+];
+
+const PERSONAS = [
+    { value: "mild", name: "Gentle", desc: "Warm & encouraging" },
+    { value: "normal", name: "Balanced", desc: "Friendly & direct" },
+    { value: "savage", name: "Savage", desc: "Bold, no filter" }
+];
+
+const els = {
+    screenPermission: document.getElementById("screen-permission"),
+    screenMain: document.getElementById("screen-main"),
+    btnAllowMic: document.getElementById("btn-allow-mic"),
+    btnRetryMic: document.getElementById("btn-retry-mic"),
+    permissionError: document.getElementById("permission-error"),
+    btnMic: document.getElementById("btn-mic"),
+    screenSplash: document.getElementById("screen-splash"),
+    permissionIcon: document.getElementById("permission-icon"),
+    btnBackMain: document.getElementById("btn-back-main"),
+    statusCard: document.getElementById("status-card"),
+    cardDots: document.getElementById("card-dots"),
+    cardTitle: document.getElementById("card-title"),
+    cardSubtitle: document.getElementById("card-subtitle"),
+    cardResponse: document.getElementById("card-response"),
+    navHome: document.getElementById("nav-home"),
+    navSettings: document.getElementById("nav-settings"),
+    navPillSlide: document.getElementById("nav-pill-slide"),
+    btnPersona: document.getElementById("btn-persona"),
+    personaDropdown: document.getElementById("persona-dropdown"),
+    btnNewChat: document.getElementById("btn-new-chat"),
+    btnOpenSettings: document.getElementById("btn-open-settings"),
+    captionsDropup: document.getElementById("captions-dropup"),
+    toggleCaptionsQuick: document.getElementById("toggle-captions-quick"),
+    screenVoiceSelect: document.getElementById("screen-voice-select"),
+    btnVoiceBack: document.getElementById("btn-voice-back"),
+    voiceGrid: document.getElementById("voice-grid"),
+    voiceHintSettings: document.getElementById("voice-hint-settings"),
+    screenHistory: document.getElementById("screen-history"),
+    btnHistoryBack: document.getElementById("btn-history-back"),
+    btnHistoryClear: document.getElementById("btn-history-clear"),
+    historyList: document.getElementById("history-list"),
+    toast: document.getElementById("toast"),
+    settingsOverlay: document.getElementById("settings-overlay"),
+    settingsPanel: document.getElementById("settings-panel"),
+    settingsClose: document.getElementById("settings-close"),
+    inputOrKey: document.getElementById("input-or-key"),
+    inputOrModel: document.getElementById("input-or-model"),
+    inputElKey: document.getElementById("input-el-key"),
+    inputElVoice: document.getElementById("input-el-voice"),
+    toggleCaptions: document.getElementById("toggle-captions"),
+    btnTestVoice: document.getElementById("btn-test-voice"),
+    btnPickVoice: document.getElementById("btn-pick-voice"),
+    btnSettingsSave: document.getElementById("btn-settings-save"),
+};
+
+model.onError = (msg) => showToast(msg);
+
+let silenceTimer = null;
+let recognition = null;
+let recognitionActive = false;
+let micEnabled = false;
+let voiceSelectFirstRun = false;
+const SILENCE_TIMEOUT_MS = 10000;
+const MIC_GRANTED_KEY = "airclia_mic_granted";
+
+// ---------------------------------------------------------------------------
+// Icons
+// ---------------------------------------------------------------------------
+const HUMAN_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`;
+
+function renderIcons() {
+    els.btnMic.innerHTML = `<i data-lucide="audio-lines" style="width:22px;height:22px;"></i>`;
+    els.permissionIcon.innerHTML = `<i data-lucide="mic" style="width:16px;height:16px;"></i>`;
+    els.btnBackMain.innerHTML = `<i data-lucide="chevron-left" style="width:20px;height:20px;"></i>`;
+    els.btnPersona.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i>`;
+    els.btnNewChat.innerHTML = `<i data-lucide="plus" style="width:18px;height:18px;"></i>`;
+    els.btnOpenSettings.innerHTML = `<i data-lucide="sliders-horizontal" style="width:16px;height:16px;"></i>`;
+    els.btnVoiceBack.innerHTML = `<i data-lucide="chevron-left" style="width:20px;height:20px;"></i>`;
+    els.btnHistoryBack.innerHTML = `<i data-lucide="chevron-left" style="width:20px;height:20px;"></i>`;
+    els.btnHistoryClear.innerHTML = `<i data-lucide="trash-2" style="width:16px;height:16px;"></i>`;
+    els.navHome.innerHTML = `${HUMAN_SVG}<span class="nav-label">Choose voice</span>`;
+    els.navSettings.innerHTML = `<i data-lucide="settings" style="width:16px;height:16px;"></i>`;
+    els.settingsClose.innerHTML = `<i data-lucide="x" style="width:20px;height:20px;"></i>`;
+    if (window.lucide) window.lucide.createIcons();
+}
+
+// ---------------------------------------------------------------------------
+// Toast
+// ---------------------------------------------------------------------------
+function showToast(message, duration = 3200) {
+    els.toast.textContent = message;
+    els.toast.classList.add("visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => els.toast.classList.remove("visible"), duration);
+}
+
+// ---------------------------------------------------------------------------
+// Status card
+// ---------------------------------------------------------------------------
+const CARD_STATUS_TEXT = {
+    idle: { title: "How can I help you today?", subtitle: "Tap the mic and start talking." },
+    listening: { title: "Listening...", subtitle: "I'm listening. Please speak." },
+    thinking: { title: "Thinking...", subtitle: "Just a moment, I'm thinking." },
+    speaking: { title: "Speaking...", subtitle: "Here's what I found for you." }
+};
+
+function setCardStatus(state) {
+    const s = CARD_STATUS_TEXT[state] || CARD_STATUS_TEXT.idle;
+    els.cardDots.classList.toggle("visible", state !== "idle");
+    els.cardTitle.textContent = s.title;
+    els.cardSubtitle.textContent = s.subtitle;
+    els.cardSubtitle.style.display = "";
+    els.cardResponse.classList.remove("visible", "expandable", "expanded");
+    els.cardResponse.textContent = "";
+}
+
+function showResponseCard(text) {
+    if (!config.get("show_captions") || !text) return;
+    els.cardDots.classList.remove("visible");
+    els.cardTitle.textContent = "Here's what I found";
+    els.cardSubtitle.style.display = "none";
+    els.cardResponse.textContent = text;
+    els.cardResponse.classList.add("visible");
+    els.cardResponse.classList.toggle("expandable", text.length > 140);
+}
+
+els.cardResponse.addEventListener("click", () => {
+    if (!els.cardResponse.classList.contains("expandable")) return;
+    els.cardResponse.classList.toggle("expanded");
+});
+
+function setAvatarState(state) {
+    model.setState(state);
+    setCardStatus(state);
+}
+
+// ---------------------------------------------------------------------------
+// Persona dropdown
+// ---------------------------------------------------------------------------
+function renderPersonaDropdown() {
+    const current = config.get("roast_intensity") || "normal";
+    els.personaDropdown.innerHTML = PERSONAS.map((p) => `
+        <div class="persona-option ${p.value === current ? "selected" : ""}" data-value="${p.value}">
+            <div class="persona-option-name">${p.name}</div>
+            <div class="persona-option-desc">${p.desc}</div>
+        </div>
+    `).join("");
+}
+
+function togglePersonaDropdown() {
+    renderPersonaDropdown();
+    closeCaptionsDropup();
+    els.personaDropdown.classList.toggle("visible");
+}
+
+function closePersonaDropdown() { els.personaDropdown.classList.remove("visible"); }
+
+els.btnPersona.addEventListener("click", (e) => { e.stopPropagation(); togglePersonaDropdown(); });
+els.personaDropdown.addEventListener("click", (e) => {
+    const opt = e.target.closest(".persona-option");
+    if (!opt) return;
+    config.set("roast_intensity", opt.dataset.value);
+    config.save();
+    const p = PERSONAS.find((x) => x.value === opt.dataset.value);
+    showToast(`Persona set to ${p ? p.name : opt.dataset.value}.`);
+    closePersonaDropdown();
+});
+
+// ---------------------------------------------------------------------------
+// Captions quick dropup
+// ---------------------------------------------------------------------------
+function toggleCaptionsDropup() {
+    els.toggleCaptionsQuick.checked = Boolean(config.get("show_captions"));
+    closePersonaDropdown();
+    els.captionsDropup.classList.toggle("visible");
+}
+function closeCaptionsDropup() { els.captionsDropup.classList.remove("visible"); }
+
+els.navSettings.addEventListener("click", (e) => { e.stopPropagation(); toggleCaptionsDropup(); });
+els.toggleCaptionsQuick.addEventListener("change", () => {
+    config.set("show_captions", els.toggleCaptionsQuick.checked);
+    config.save();
+    els.toggleCaptions.checked = els.toggleCaptionsQuick.checked;
+});
+
+document.addEventListener("click", (e) => {
+    if (!els.personaDropdown.contains(e.target) && e.target !== els.btnPersona) closePersonaDropdown();
+    if (!els.captionsDropup.contains(e.target) && e.target !== els.navSettings) closeCaptionsDropup();
+});
+
+// ---------------------------------------------------------------------------
+// New chat
+// ---------------------------------------------------------------------------
+els.btnNewChat.addEventListener("click", async () => {
+    closePersonaDropdown();
+    closeCaptionsDropup();
+    voice.stop();
+    clearSilenceTimer();
+    setCardStatus("idle");
+    model.setEmotion("neutral");
+    showToast("Starting a new conversation.");
+    await startConversation();
+});
+
+// ---------------------------------------------------------------------------
+// Settings panel
+// ---------------------------------------------------------------------------
+function openSettings() {
+    populateSettingsForm();
+    els.settingsOverlay.classList.add("visible");
+    els.settingsPanel.classList.add("visible");
+}
+function closeSettings() {
+    els.settingsOverlay.classList.remove("visible");
+    els.settingsPanel.classList.remove("visible");
+}
+function populateSettingsForm() {
+    els.inputOrKey.value = config.get("openrouter_api_key") || "";
+    els.inputOrModel.value = config.get("openrouter_model") || "";
+    els.inputElKey.value = config.get("elevenlabs_api_key") || "";
+    els.inputElVoice.value = config.get("elevenlabs_voice_id") || "";
+    els.toggleCaptions.checked = Boolean(config.get("show_captions"));
+}
+
+els.settingsClose.addEventListener("click", closeSettings);
+els.settingsOverlay.addEventListener("click", closeSettings);
+els.btnOpenSettings.addEventListener("click", () => { closePersonaDropdown(); closeCaptionsDropup(); openSettings(); });
+els.voiceHintSettings.addEventListener("click", openSettings);
+
+els.btnSettingsSave.addEventListener("click", () => {
+    config.setMany({
+        openrouter_api_key: els.inputOrKey.value.trim(),
+        openrouter_model: els.inputOrModel.value.trim(),
+        elevenlabs_api_key: els.inputElKey.value.trim(),
+        elevenlabs_voice_id: els.inputElVoice.value.trim(),
+        show_captions: els.toggleCaptions.checked,
+    });
+    config.save();
+    showToast("Settings saved.");
+    closeSettings();
+
+    if (config.canRunWithFallback() && els.screenMain.classList.contains("active") === false) {
+        goToMainScreen();
+    }
+});
+
+els.btnTestVoice.addEventListener("click", async () => {
+    try {
+        const tempConfigKey = config.get("elevenlabs_api_key");
+        const tempConfigVoice = config.get("elevenlabs_voice_id");
+        config.set("elevenlabs_api_key", els.inputElKey.value.trim());
+        config.set("elevenlabs_voice_id", els.inputElVoice.value.trim());
+        await voice.testVoice();
+        config.set("elevenlabs_api_key", tempConfigKey);
+        config.set("elevenlabs_voice_id", tempConfigVoice);
+    } catch (err) {
+        console.error(err);
+        showToast(err.message || "Couldn't reach ElevenLabs.");
+    }
+});
+
+els.btnPickVoice.addEventListener("click", () => {
+    closeSettings();
+    openVoiceSelect("main");
+});
+
+// ---------------------------------------------------------------------------
+// Voice select screen
+// ---------------------------------------------------------------------------
+function currentVoiceId() { return config.get("elevenlabs_voice_id") || ""; }
+
+function renderVoiceGrid() {
+    const selectedId = currentVoiceId();
+    const presetCards = FREE_VOICES.map((v) => `
+        <div class="airc-voice-card ${v.id === selectedId ? "selected" : ""}" data-id="${v.id}" data-name="${v.name}">
+            <div class="airc-voice-card-name">${v.name}</div>
+            <div class="airc-voice-card-desc">${v.desc}</div>
+            <button class="airc-voice-select-btn" data-select="${v.id}" data-name="${v.name}">Select</button>
+        </div>
+    `).join("");
+
+    const isCustomSelected = selectedId && !FREE_VOICES.some((v) => v.id === selectedId);
+
+    els.voiceGrid.innerHTML = presetCards + `
+        <div class="airc-voice-card airc-voice-card-custom ${isCustomSelected ? "selected" : ""}">
+            <div class="airc-voice-custom-head">
+                <div class="airc-voice-card-name">Custom Voice</div>
+                <div class="airc-badge-add">+ add</div>
+            </div>
+            <div class="airc-voice-card-desc">Paste any ElevenLabs Voice ID.</div>
+            <input type="text" id="voice-custom-id" placeholder="Voice ID" value="${isCustomSelected ? selectedId : ""}" />
+            <input type="text" id="voice-custom-name" placeholder="Name (optional)" value="${isCustomSelected ? (config.get("elevenlabs_voice_name") || "") : ""}" />
+            <button class="airc-voice-select-btn" id="voice-custom-select">Select</button>
+        </div>
+    `;
+
+    document.getElementById("voice-custom-select").addEventListener("click", () => {
+        const id = document.getElementById("voice-custom-id").value.trim();
+        const name = document.getElementById("voice-custom-name").value.trim() || "Custom Voice";
+        if (!id) { showToast("Paste a Voice ID first."); return; }
+        selectVoice(id, name);
+    });
+}
+
+els.voiceGrid.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-select]");
+    if (!btn) return;
+    selectVoice(btn.dataset.select, btn.dataset.name);
+});
+
+function updateHomeVoiceLabel() {
+    const name = config.get("elevenlabs_voice_name") || (config.get("elevenlabs_voice_id") ? "Custom Voice" : "Choose voice");
+    const label = els.navHome.querySelector(".nav-label");
+    if (label) label.textContent = name;
+}
+
+function selectVoice(id, name) {
+    config.setMany({ elevenlabs_voice_id: id, elevenlabs_voice_name: name });
+    config.save();
+    els.inputElVoice.value = id;
+    updateHomeVoiceLabel();
+    closeVoiceSelect();
+    if (voiceSelectFirstRun) {
+        voiceSelectFirstRun = false;
+        goToMainScreen();
+    } else {
+        showToast(`Voice updated to ${name}.`);
+    }
+}
+
+function openVoiceSelect(mode) {
+    voiceSelectFirstRun = mode === "onboarding";
+    renderVoiceGrid();
+    els.screenVoiceSelect.classList.add("active");
+}
+function closeVoiceSelect() { els.screenVoiceSelect.classList.remove("active"); }
+
+els.navHome.addEventListener("click", () => openVoiceSelect("main"));
+els.btnVoiceBack.addEventListener("click", () => {
+    if (voiceSelectFirstRun) { showToast("Pick a voice to continue."); return; }
+    closeVoiceSelect();
+});
+
+// ---------------------------------------------------------------------------
+// Screen transitions
+// ---------------------------------------------------------------------------
+function goToMainScreen() {
+    els.screenPermission.classList.remove("active");
+    els.screenMain.classList.add("active");
+    updateHomeVoiceLabel();
+    model.mount();
+    setAvatarState("idle");
+    startConversation();
+}
+
+function goToSettingsRequired(message) {
+    els.screenPermission.classList.remove("active");
+    els.screenMain.classList.add("active");
+    updateHomeVoiceLabel();
+    model.mount();
+    setAvatarState("idle");
+    if (message) showToast(message);
+    openSettings();
+}
+
+function showSplashThenPermission() {
+    setTimeout(async () => {
+        els.screenSplash.classList.remove("active");
+        if (await isMicAlreadyGranted()) {
+            await proceedPastPermission();
+        } else {
+            els.screenPermission.classList.add("active");
+        }
+    }, 1800);
+}
+
+async function isMicAlreadyGranted() {
+    if (localStorage.getItem(MIC_GRANTED_KEY) === "1") return true;
+    try {
+        if (navigator.permissions && navigator.permissions.query) {
+            const status = await navigator.permissions.query({ name: "microphone" });
+            return status.state === "granted";
+        }
+    } catch (err) { /* permissions API unsupported — fall through */ }
+    return false;
+}
+
+async function proceedPastPermission() {
+    localStorage.setItem(MIC_GRANTED_KEY, "1");
+    if (!config.get("elevenlabs_voice_id")) {
+        els.screenMain.classList.add("active");
+        model.mount();
+        openVoiceSelect("onboarding");
+    } else if (config.isComplete() || config.canRunWithFallback()) {
+        goToMainScreen();
+    } else {
+        goToSettingsRequired("Add your API keys to get started.");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// History screen
+// ---------------------------------------------------------------------------
+function openHistory() { renderHistory(); els.screenHistory.classList.add("active"); }
+function closeHistory() { els.screenHistory.classList.remove("active"); }
+
+els.btnBackMain.addEventListener("click", openHistory);
+els.btnHistoryBack.addEventListener("click", closeHistory);
+els.btnHistoryClear.addEventListener("click", () => {
+    config.clearHistory();
+    renderHistory();
+    showToast("History cleared.");
+});
+
+function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function formatRelativeTime(ts) {
+    const diffMs = Date.now() - ts;
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const days = Math.floor(hrs / 24);
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days} days ago`;
+    return new Date(ts).toLocaleDateString();
+}
+
+function renderHistory() {
+    const items = config.getHistory();
+    if (!items.length) {
+        els.historyList.innerHTML = `<div class="airc-history-empty">No conversations yet.</div>`;
+        return;
+    }
+    els.historyList.innerHTML = items.map((item) => `
+        <div class="airc-history-item">
+            <div>
+                <div class="airc-history-text">${escapeHtml(item.text)}</div>
+                <div class="airc-history-time">${formatRelativeTime(item.ts)}</div>
+            </div>
+            <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--muted);"></i>
+        </div>
+    `).join("");
+    if (window.lucide) window.lucide.createIcons();
+}
+
+// ---------------------------------------------------------------------------
+// Microphone permission
+// ---------------------------------------------------------------------------
+async function requestMicPermission() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+        els.permissionError.classList.remove("visible");
+        els.btnRetryMic.style.display = "none";
+        await proceedPastPermission();
+    } catch (err) {
+        console.error("[AirClia] Mic permission denied.", err);
+        els.permissionError.classList.add("visible");
+        els.btnRetryMic.style.display = "inline-block";
+    }
+}
+
+els.btnAllowMic.addEventListener("click", requestMicPermission);
+els.btnRetryMic.addEventListener("click", requestMicPermission);
+
+// ---------------------------------------------------------------------------
+// Speech recognition
+// ---------------------------------------------------------------------------
+function setupRecognition() {
+    const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionImpl) {
+        showToast("This browser doesn't support speech recognition.");
+        return null;
+    }
+
+    const rec = new SpeechRecognitionImpl();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = "en-US";
+
+    rec.onstart = () => { recognitionActive = true; };
+
+    rec.onresult = (event) => {
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) finalTranscript += transcript;
+            else interimTranscript += transcript;
+        }
+
+        if (interimTranscript.trim().length > 0 && voice.isSpeaking()) {
+            handleUserInterrupt();
+        }
+        if (finalTranscript.trim().length > 0) {
+            handleUserFinalTranscript(finalTranscript.trim());
+        }
+    };
+
+    rec.onerror = (event) => {
+        console.warn("[AirClia] Recognition error:", event.error);
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            showToast("Mic access needed for AirClia to work.");
+        }
+    };
+
+    rec.onend = () => {
+        recognitionActive = false;
+        if (micEnabled) {
+            try { rec.start(); } catch (err) {
+                setTimeout(() => {
+                    if (micEnabled) { try { rec.start(); } catch (e) { /* ignore */ } }
+                }, 400);
+            }
+        }
+    };
+
+    return rec;
+}
+
+// Mic toggles silently — no tone/beep is ever played, only a visual state change.
+function startListening() {
+    if (!recognition) recognition = setupRecognition();
+    if (!recognition) return;
+    micEnabled = true;
+    els.btnMic.classList.add("is-listening");
+    if (!recognitionActive) {
+        try { recognition.start(); } catch (err) { /* already started */ }
+    }
+    if (model.getState() !== "speaking") setAvatarState("listening");
+    resetSilenceTimer();
+}
+
+function stopListening() {
+    micEnabled = false;
+    els.btnMic.classList.remove("is-listening");
+    clearSilenceTimer();
+    if (recognition && recognitionActive) recognition.stop();
+}
+
+els.btnMic.addEventListener("click", () => {
+    if (micEnabled) { stopListening(); setAvatarState("idle"); }
+    else { startListening(); }
+});
+
+// ---------------------------------------------------------------------------
+// Silence handling
+// ---------------------------------------------------------------------------
+function resetSilenceTimer() {
+    clearSilenceTimer();
+    if (!micEnabled) return;
+    silenceTimer = setTimeout(onSilenceTimeout, SILENCE_TIMEOUT_MS);
+}
+function clearSilenceTimer() {
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+}
+async function onSilenceTimeout() {
+    if (!micEnabled || voice.isSpeaking()) return;
+    const result = await brain.handleSilence();
+    await speakResponse(result.text);
+}
+
+// ---------------------------------------------------------------------------
+// Conversation flow
+// ---------------------------------------------------------------------------
+async function startConversation() {
+    brain.resetSession();
+    const opener = await brain.openingLine();
+    await speakResponse(opener.text);
+    startListening();
+}
+
+async function handleUserFinalTranscript(text) {
+    clearSilenceTimer();
+    config.addHistoryEntry(text);
+    setAvatarState("thinking");
+    const result = await brain.respond(text);
+
+    if (result.type === "roast") model.setEmotion("joy");
+    else if (result.type === "supportive") model.setEmotion("happy");
+    else model.setEmotion("neutral");
+
+    await speakResponse(result.text);
+}
+
+function handleUserInterrupt() {
+    voice.stop();
+    setAvatarState("listening");
+    resetSilenceTimer();
+}
+
+async function speakResponse(text) {
+    setAvatarState("speaking");
+
+    voice.onStart = () => { model.attachAudioElement(voice.getAudioElement()); };
+    voice.onEnd = () => {
+        model.triggerNod();
+        if (micEnabled) { setAvatarState("listening"); resetSilenceTimer(); }
+        else { setAvatarState("idle"); }
+        showResponseCard(text);
+    };
+    voice.onError = (kind, err) => {
+        console.warn("[AirClia] Voice error:", kind, err);
+        if (kind === "elevenlabs") showToast("Voice service hiccup — switching to backup voice.");
+        if (kind === "no-tts") showToast("No text-to-speech available on this browser.");
+    };
+
+    await voice.speak(text);
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+renderIcons();
+showSplashThenPermission();
+
+window.addEventListener("beforeunload", () => {
+    voice.stop();
+    if (recognition) { micEnabled = false; try { recognition.stop(); } catch (e) { /* ignore */ } }
+});
+</script>
+</body>
+</html>
