@@ -25,6 +25,38 @@ export class AirCVoice {
     }
 
     /**
+     * Select the active voice. Accepts a voice entry ({ id, name, ... }).
+     * An empty id means "use the browser speech synthesis fallback".
+     */
+    setVoice(voice) {
+        if (!voice) return null;
+        this.config.setMany({
+            elevenlabs_voice_id: voice.id || "",
+            selected_voice: voice.name || "AirClia Voice",
+            voice_setup_complete: true
+        });
+        this.config.save();
+        return this.getCurrentVoice();
+    }
+
+    /**
+     * Returns the currently selected voice entry from the config voice library.
+     */
+    getCurrentVoice() {
+        const id = this.config.get("elevenlabs_voice_id") || "";
+        const name = this.config.get("selected_voice") || "";
+        const found = this.config.getVoices().find((v) => v.id === id);
+        if (found) return found;
+        return {
+            id,
+            name: name || "AirClia Voice",
+            description: id ? "Your custom ElevenLabs voice." : "Browser voice.",
+            builtIn: !id
+        };
+    }
+
+
+    /**
      * Returns the currently-playing <audio> element (ElevenLabs path), or
      * null if nothing is playing or we're using the browser TTS fallback.
      * Browser SpeechSynthesis has no accessible audio buffer, so real
@@ -181,11 +213,16 @@ export class AirCVoice {
      * Throws on failure so the caller (Settings UI) can show a useful error.
      */
     async testVoice(sampleText = "Hey, this is what I sound like.") {
+        this.stop();
         const apiKey = this.config.get("elevenlabs_api_key");
         const voiceId = this.config.get("elevenlabs_voice_id");
         if (!apiKey || !voiceId) {
-            throw new Error("Add your ElevenLabs API key and Voice ID first.");
+            // No ElevenLabs credentials — preview the browser fallback voice
+            // instead of failing outright.
+            this._speakWithBrowserTTS(sampleText);
+            return;
         }
         await this._speakWithElevenLabs(sampleText, apiKey, voiceId);
+
     }
 }
