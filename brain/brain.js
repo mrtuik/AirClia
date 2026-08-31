@@ -82,6 +82,33 @@ export class AirCBrain {
         this.consecutiveLowEffort = 0;
     }
 
+    /**
+     * Change the active persona. Roast intensity is derived from it inside
+     * AirCConfig, so the existing roast logic keeps working unchanged.
+     */
+    setPersona(persona) {
+        this.config.set("persona", persona);
+        this.config.save();
+        return this.config.get("persona");
+    }
+
+    getPersona() {
+        return this.config.get("persona") || "balanced";
+    }
+
+    /**
+     * Rehydrate the in-memory conversation from a stored session so an old
+     * conversation can be continued with context.
+     */
+    loadHistory(messages) {
+        this.history = (messages || [])
+            .filter((m) => m && (m.role === "user" || m.role === "assistant") && m.content)
+            .map((m) => ({ role: m.role, content: m.content }));
+        this.consecutiveSilences = 0;
+        this.consecutiveLowEffort = 0;
+    }
+
+
     _pushHistory(role, content) {
         this.history.push({ role, content });
         const maxMessages = MAX_HISTORY_TURNS * 2;
