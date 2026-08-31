@@ -1,489 +1,587 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>AirClia</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>AirC — AirClia</title>
+<meta name="description" content="AirC is a premium AI voice companion. Talk to AirClia — witty, confident and always listening." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
-    :root {
-        --bg-top: #FFFFFF;
-        --bg-bottom: #F5F6FB;
-        --primary-1: #B8C4FF;
-        --primary-2: #8FA6FF;
-        --secondary: #FFC9DE;
-        --ink: #1C1C22;
-        --text: #2B2B33;
-        --muted: #8A8A95;
-        --line: #ECECF3;
-        --error: #FF8080;
-        --card: #FFFFFF;
-        --font-display: "Poppins", "Inter", sans-serif;
-        --font-body: "Inter", "Poppins", sans-serif;
-    }
+/* ===================================================================
+   AirC design system
+   =================================================================== */
+:root{
+  --bg:#FFFFFF;
+  --surface:#F7F7FB;
+  --card:#FFFFFF;
+  --accent:#8FA6FF;
+  --accent-soft:#B8C4FF;
+  --accent-wash:#EEF1FF;
+  --secondary:#FFC9DE;
+  --text:#2B2B33;
+  --muted:#8A8A95;
+  --line:#ECECF2;
+  --error:#FF8080;
+  --radius-card:22px;
+  --radius-btn:16px;
+  --shadow-soft:0 8px 30px rgba(0,0,0,.06);
+  --shadow-lift:0 14px 44px rgba(43,43,51,.10);
+  --ease:cubic-bezier(.22,.75,.28,1);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--surface);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input{font-family:inherit;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px;}
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+#app{position:relative;width:100%;min-height:100dvh;overflow:hidden;}
+.screen{
+  position:fixed;inset:0;display:none;flex-direction:column;
+  opacity:0;transform:translateY(8px);
+  transition:opacity .38s var(--ease),transform .38s var(--ease);
+}
+.screen.active{display:flex;opacity:1;transform:none;}
 
-    html, body {
-        margin: 0; padding: 0; width: 100%; height: 100%;
-        overflow: hidden;
-        font-family: var(--font-body);
-        color: var(--text);
-        background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
-    }
+/* ---------- shared header ---------- */
+.app-header{
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;gap:8px;
+  padding:calc(var(--safe-t) + 14px) 16px 12px;
+  background:transparent;
+}
+.app-header .h-left{display:flex;justify-content:flex-start;min-width:0;}
+.app-header .h-right{display:flex;justify-content:flex-end;gap:8px;min-width:0;}
+.h-title{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.h-title strong{font-size:16px;font-weight:600;letter-spacing:-.2px;}
+.h-title .h-voice{
+  font-size:11.5px;color:var(--muted);font-weight:500;
+  padding:2px 8px;border-radius:999px;transition:background .25s var(--ease),color .25s var(--ease);
+}
+.h-title .h-voice:hover{background:var(--accent-wash);color:var(--accent);}
+.icon-btn{
+  width:40px;height:40px;border-radius:14px;display:grid;place-items:center;
+  color:var(--text);background:transparent;flex-shrink:0;
+  transition:background .25s var(--ease),transform .25s var(--ease),color .25s var(--ease);
+}
+.icon-btn:hover{background:#EFEFF5;}
+.icon-btn:active{transform:scale(.94);}
+.icon-btn.tinted{background:var(--card);box-shadow:var(--shadow-soft);}
+.icon-btn svg{width:19px;height:19px;stroke-width:1.7;}
 
-    #app { position: relative; width: 100%; height: 100%; }
+/* ---------- permission screen ---------- */
+#screen-permission{align-items:center;justify-content:center;padding:24px;background:var(--surface);}
+.perm-card{
+  width:100%;max-width:380px;background:var(--card);border-radius:28px;
+  padding:36px 28px 30px;text-align:center;box-shadow:var(--shadow-soft);
+  border:1px solid var(--line);
+}
+.perm-icon{
+  width:72px;height:72px;margin:0 auto 22px;border-radius:26px;display:grid;place-items:center;
+  background:linear-gradient(160deg,var(--accent-wash),#FFF3F8);color:var(--accent);
+  animation:breathe 5s var(--ease) infinite;
+}
+.perm-icon svg{width:28px;height:28px;stroke-width:1.6;}
+.perm-card h1{font-size:21px;margin:0 0 8px;font-weight:600;letter-spacing:-.3px;}
+.perm-card p{font-size:14px;line-height:1.6;color:var(--muted);margin:0 0 26px;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:52px;padding:0 26px;border-radius:18px;font-size:15px;font-weight:600;
+  background:var(--text);color:#fff;transition:transform .25s var(--ease),opacity .25s var(--ease);
+}
+.btn:active{transform:scale(.98);}
+.btn.wide{width:100%;}
+.btn.ghost{background:var(--surface);color:var(--text);border:1px solid var(--line);}
+.btn.accent{background:linear-gradient(135deg,var(--accent-soft),var(--accent));color:#fff;}
+.perm-error{
+  display:none;margin-top:16px;font-size:13px;color:var(--error);line-height:1.5;
+}
+.perm-error.visible{display:block;}
 
-    /* ---------- Screens ---------- */
-    .airc-screen {
-        position: absolute; inset: 0; display: none;
-        flex-direction: column; align-items: center; justify-content: center;
-        transition: opacity 400ms ease-in-out;
-    }
-    .airc-screen.active { display: flex; }
+/* ---------- home (chat) ---------- */
+#screen-home{background:var(--bg);}
+.home-body{
+  flex:1;overflow-y:auto;padding:8px 18px 12px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.home-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;padding-bottom:14vh;text-align:center;
+}
+.home-empty h2{font-size:24px;font-weight:600;letter-spacing:-.5px;margin:0;}
+.home-empty p{font-size:14px;color:var(--muted);margin:0;max-width:260px;line-height:1.6;}
+.home-empty .orb{
+  width:58px;height:58px;border-radius:50%;margin-bottom:6px;
+  background:radial-gradient(circle at 35% 30%,#fff,var(--accent-soft) 60%,var(--accent));
+  box-shadow:0 12px 34px rgba(143,166,255,.36);
+  animation:breathe 6s var(--ease) infinite;
+}
+.msg{max-width:86%;font-size:15px;line-height:1.62;animation:msgIn .4s var(--ease);}
+.msg.user{
+  align-self:flex-end;background:var(--text);color:#fff;
+  padding:12px 16px;border-radius:20px 20px 6px 20px;
+}
+.msg.ai{align-self:flex-start;color:var(--text);padding:2px 2px;}
+.msg.ai .who{
+  display:block;font-size:11px;font-weight:600;letter-spacing:.4px;
+  text-transform:uppercase;color:var(--accent);margin-bottom:5px;
+}
+.msg.pending{color:var(--muted);}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 
-    /* ---------- Splash ---------- */
-    #screen-splash { gap: 14px; }
-    .airc-splash-blob {
-        width: 120px; height: 120px; border-radius: 50%;
-        background: radial-gradient(circle, rgba(184,196,255,0.7) 0%, rgba(255,201,222,0.35) 55%, rgba(255,255,255,0) 75%);
-        filter: blur(4px); margin-bottom: 6px;
-        animation: airc-breathe 4s ease-in-out infinite;
-    }
-    .airc-logo {
-        font-family: var(--font-display); font-weight: 800; font-size: 40px; letter-spacing: -0.5px;
-        background: linear-gradient(135deg, var(--primary-2), var(--secondary));
-        -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
-    .airc-tagline { color: var(--muted); font-size: 14.5px; margin-top: -8px; margin-bottom: 8px; }
-    #screen-splash .airc-tagline { margin-bottom: 26px; }
-    .airc-dots { display: flex; gap: 6px; align-items: center; }
-    .airc-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--line); transition: all 250ms ease; }
-    .airc-dots span.active { width: 18px; border-radius: 4px; background: var(--primary-2); }
+/* ---------- composer ---------- */
+.composer-wrap{padding:6px 14px calc(var(--safe-b) + 14px);background:var(--bg);}
+.composer{
+  background:var(--card);border:1px solid var(--line);border-radius:26px;
+  box-shadow:var(--shadow-soft);padding:14px 16px 10px;
+  transition:box-shadow .3s var(--ease),border-color .3s var(--ease);
+}
+.composer:focus-within{box-shadow:var(--shadow-lift);border-color:#DFE3FF;}
+.composer textarea{
+  width:100%;border:none;resize:none;outline:none;background:transparent;
+  font-size:15.5px;line-height:1.55;color:var(--text);max-height:132px;min-height:24px;
+  font-family:inherit;
+}
+.composer textarea::placeholder{color:var(--muted);}
+.composer-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.composer-row .spacer{flex:1;}
+.chip-btn{
+  display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;
+  border-radius:999px;background:var(--surface);color:var(--muted);
+  font-size:12.5px;font-weight:500;max-width:150px;
+  transition:background .25s var(--ease),color .25s var(--ease);
+}
+.chip-btn svg{width:14px;height:14px;stroke-width:1.8;flex-shrink:0;}
+.chip-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chip-btn:hover{background:var(--accent-wash);color:var(--accent);}
+.round-btn{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:var(--surface);color:var(--text);flex-shrink:0;
+  transition:background .25s var(--ease),transform .25s var(--ease);
+}
+.round-btn:active{transform:scale(.93);}
+.round-btn svg{width:18px;height:18px;stroke-width:1.7;}
+.round-btn.primary{background:linear-gradient(135deg,var(--accent-soft),var(--accent));color:#fff;box-shadow:0 6px 18px rgba(143,166,255,.4);}
 
-    .airc-btn {
-        font-family: var(--font-body); font-weight: 600; font-size: 15px; border: none; border-radius: 999px;
-        padding: 14px 28px; cursor: pointer; background: var(--ink); color: #fff;
-        box-shadow: 0 10px 26px rgba(28,28,34,0.18);
-        transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
-    }
-    .airc-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(28,28,34,0.24); }
-    .airc-btn:active { transform: translateY(0) scale(0.98); }
-    .airc-btn-gradient { background: linear-gradient(135deg, var(--primary-1), var(--primary-2)); box-shadow: 0 10px 26px rgba(143,166,255,0.35); }
-    .airc-btn-ghost { background: transparent; color: var(--muted); box-shadow: none; border: 1px solid var(--line); }
-    .airc-btn-wide { width: min(280px, 78vw); }
-    .airc-error-msg { color: var(--error); font-size: 13px; margin-top: 6px; display: none; }
-    .airc-error-msg.visible { display: block; }
+/* ---------- assistant screen ---------- */
+#screen-assistant{background:linear-gradient(180deg,#FFFFFF 0%,#F7F7FB 55%,#F3F2FA 100%);}
+#model-container{position:absolute;inset:0;display:grid;place-items:center;padding-bottom:60px;}
+#screen-assistant .app-header{position:relative;z-index:3;}
+.avatar-btn{
+  width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  background:var(--card);box-shadow:var(--shadow-soft);color:var(--accent);
+}
+.avatar-btn svg{width:20px;height:20px;}
 
-    /* ---------- Permission screen (premium card) ---------- */
-    #screen-permission { padding: 32px; text-align: center; gap: 16px; }
-    .airc-permission-card {
-        width: min(300px, 82vw);
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 22px;
-        padding: 22px 20px;
-        box-shadow: 0 18px 40px rgba(28,28,34,0.08);
-        display: flex; flex-direction: column; align-items: center; gap: 16px;
-    }
-    .airc-permission-row {
-        display: flex; align-items: center; gap: 10px;
-        font-weight: 600; font-size: 15.5px; color: var(--ink);
-    }
-    .airc-permission-row .airc-wave-icon {
-        width: 30px; height: 30px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        background: radial-gradient(circle, rgba(184,196,255,0.55) 0%, rgba(255,201,222,0.2) 60%, rgba(255,255,255,0) 78%);
-        color: var(--primary-2);
-    }
-    .airc-permission-title { font-family: var(--font-display); font-weight: 700; font-size: 19px; margin-top: 4px; }
-    .airc-permission-subtitle { color: var(--muted); font-size: 13.5px; margin-top: -6px; }
+.airc-model-wrapper{position:relative;width:min(88vw,420px);aspect-ratio:1;display:grid;place-items:center;}
+.airc-model-glow{
+  position:absolute;inset:6%;border-radius:50%;
+  background:radial-gradient(circle,rgba(184,196,255,.55),rgba(184,196,255,0) 68%);
+  opacity:.5;transition:opacity .6s var(--ease),transform .6s var(--ease);
+}
+.airc-model-frame-holder{position:relative;width:100%;height:100%;}
+.airc-model-canvas{width:100%;height:100%;display:block;}
+.airc-model-wrapper{animation:breathe 7s var(--ease) infinite;}
+.airc-state-idle .airc-model-glow{opacity:.42;}
+.airc-state-listening .airc-model-glow{opacity:.6;transform:scale(1.02);}
+.airc-state-thinking .airc-model-glow{opacity:.28;transform:scale(.97);}
+.airc-state-speaking .airc-model-glow{
+  opacity:.9;background:radial-gradient(circle,rgba(184,196,255,.85),rgba(255,201,222,.28) 55%,rgba(184,196,255,0) 72%);
+  animation:speakPulse 2.6s var(--ease) infinite;
+}
+.airc-state-speaking{animation:breathe 3.4s var(--ease) infinite;}
+@keyframes breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.018);}}
+@keyframes speakPulse{0%,100%{opacity:.62;transform:scale(1);}50%{opacity:1;transform:scale(1.05);}}
 
-    /* ---------- Voice select screen ---------- */
-    #screen-voice-select .airc-overlay-body { padding-top: 88px; }
-    .airc-voice-grid {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-    }
-    .airc-voice-card {
-        background: #fff; border: 1px solid var(--line); border-radius: 20px;
-        padding: 18px 14px; display: flex; flex-direction: column; gap: 10px;
-        box-shadow: 0 10px 28px rgba(28,28,34,0.06);
-    }
-    .airc-voice-card-name { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; }
-    .airc-voice-card-desc { color: var(--muted); font-size: 12.5px; line-height: 1.4; min-height: 32px; }
-    .airc-voice-select-btn {
-        border: none; border-radius: 999px; padding: 9px 0; width: 100%;
-        background: var(--ink); color: #fff; font-weight: 600; font-size: 13px; cursor: pointer;
-        transition: transform 180ms ease, background 200ms ease;
-    }
-    .airc-voice-select-btn:active { transform: scale(0.96); }
-    .airc-voice-card.selected { border-color: var(--primary-2); box-shadow: 0 0 0 2px rgba(143,166,255,0.25), 0 10px 28px rgba(28,28,34,0.06); }
-    .airc-voice-card.selected .airc-voice-select-btn { background: linear-gradient(135deg, var(--primary-1), var(--primary-2)); }
-    .airc-voice-card-custom { grid-column: 1 / -1; }
-    .airc-voice-custom-head { display: flex; align-items: center; justify-content: space-between; }
-    .airc-badge-add {
-        background: var(--ink); color: #fff; font-size: 11px; font-weight: 700;
-        border-radius: 999px; padding: 5px 11px;
-    }
-    .airc-voice-card-custom input {
-        width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line);
-        font-size: 13.5px; font-family: var(--font-body); background: #FBFBFE; color: var(--text); margin-bottom: 8px;
-    }
-    .airc-voice-hint { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 18px; }
-    .airc-voice-hint a { color: var(--primary-2); font-weight: 600; cursor: pointer; text-decoration: none; }
+/* ---------- captions ---------- */
+#captions{
+  position:absolute;left:50%;transform:translate(-50%,10px);
+  bottom:calc(var(--safe-b) + 118px);width:min(92%,520px);z-index:4;
+  background:rgba(43,43,51,.82);color:#fff;backdrop-filter:blur(14px);
+  padding:13px 18px;border-radius:18px;font-size:16.5px;line-height:1.5;
+  text-align:center;opacity:0;pointer-events:none;
+  transition:opacity .45s var(--ease),transform .45s var(--ease);
+}
+#captions.visible{opacity:1;transform:translate(-50%,0);}
 
-    /* ---------- Toast ---------- */
-    #toast {
-        position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
-        background: var(--ink); color: #fff; font-size: 14px; padding: 10px 18px; border-radius: 999px;
-        opacity: 0; transition: opacity 350ms ease-in-out, transform 350ms ease-in-out;
-        z-index: 60; max-width: 85%; text-align: center;
-    }
-    #toast.visible { opacity: 1; transform: translateX(-50%) translateY(4px); }
+/* ---------- floating bottom nav ---------- */
+.floating-nav{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(var(--safe-b) + 20px);z-index:5;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(18px);
+  border:1px solid var(--line);border-radius:999px;
+  padding:8px;box-shadow:var(--shadow-lift);
+}
+.nav-item{
+  position:relative;height:46px;min-width:46px;padding:0 14px;border-radius:999px;
+  display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13px;font-weight:500;
+  transition:color .3s var(--ease),background .3s var(--ease),transform .3s var(--ease);
+}
+.nav-item svg{width:19px;height:19px;stroke-width:1.7;}
+.nav-item:active{transform:scale(.95);}
+.nav-item.active{color:var(--text);background:var(--surface);}
+.nav-mic{
+  width:58px;height:58px;border-radius:50%;display:grid;place-items:center;
+  background:var(--text);color:#fff;transition:transform .35s var(--ease),background .35s var(--ease),box-shadow .35s var(--ease);
+}
+.nav-mic svg{width:22px;height:22px;stroke-width:1.7;}
+.nav-mic.is-listening{
+  background:linear-gradient(135deg,var(--accent-soft),var(--accent));
+  box-shadow:0 0 0 6px rgba(143,166,255,.18);
+}
 
-    /* ---------- Settings panel (premium) ---------- */
-    #settings-overlay {
-        position: absolute; inset: 0; background: rgba(28,28,34,0.28);
-        opacity: 0; pointer-events: none; transition: opacity 350ms ease-in-out; z-index: 40;
-        backdrop-filter: blur(2px);
-    }
-    #settings-overlay.visible { opacity: 1; pointer-events: auto; }
-    #settings-panel {
-        position: absolute; top: 0; right: 0; width: min(380px, 88vw); height: 100%;
-        background: #FFFFFF; box-shadow: -16px 0 44px rgba(28,28,34,0.14);
-        transform: translateX(100%); transition: transform 380ms cubic-bezier(.22,1,.36,1);
-        z-index: 41; overflow-y: auto; padding: 26px 22px 110px;
-    }
-    #settings-panel.visible { transform: translateX(0%); }
-    .settings-title { font-family: var(--font-display); font-weight: 700; font-size: 21px; margin-bottom: 20px; }
-    .settings-section { margin-bottom: 22px; }
-    .settings-section h3 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 700; }
-    .settings-field { margin-bottom: 12px; }
-    .settings-field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
-    .settings-field input, .settings-field select {
-        width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line);
-        font-size: 14px; font-family: var(--font-body); background: #FBFBFE; color: var(--text);
-        transition: border-color 180ms ease;
-    }
-    .settings-field input:focus { outline: none; border-color: var(--primary-2); }
-    .settings-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
-    .settings-hint { font-size: 11.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
-    .switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .switch-track { position: absolute; inset: 0; background: var(--line); border-radius: 999px; cursor: pointer; transition: background 200ms ease; }
-    .switch-track::before {
-        content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px;
-        background: #fff; border-radius: 50%; transition: transform 200ms ease; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .switch input:checked + .switch-track { background: var(--primary-2); }
-    .switch input:checked + .switch-track::before { transform: translateX(18px); }
-    .settings-actions { position: sticky; bottom: 0; background: #fff; padding-top: 14px; display: flex; gap: 10px; }
-    .settings-actions .airc-btn { flex: 1; padding: 12px 0; font-size: 14px; text-align: center; }
-    #settings-close { position: absolute; top: 22px; right: 20px; background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; }
+/* ---------- overlays / sheets / drawers ---------- */
+.scrim{
+  position:fixed;inset:0;background:rgba(30,30,40,.28);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .35s var(--ease);z-index:40;
+}
+.scrim.visible{opacity:1;pointer-events:auto;}
 
-    /* ---------- Top bar ---------- */
-    .airc-topbar {
-        position: absolute; top: 0; left: 0; right: 0;
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 18px 16px 0; z-index: 15;
-    }
-    .airc-topbar-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
-    .airc-icon-circle {
-        width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        background: rgba(28,28,34,0.9); color: #fff;
-        box-shadow: 0 4px 14px rgba(28,28,34,0.18);
-        transition: transform 200ms ease, box-shadow 200ms ease;
-    }
-    .airc-icon-circle:active { transform: scale(0.9); }
-    .airc-icon-circle-light { background: rgba(255,255,255,0.92); color: var(--text); border: 1px solid var(--line); }
-    .airc-header-actions { display: flex; align-items: center; gap: 8px; position: relative; }
-    .airc-icon-circle-sm { width: 36px; height: 36px; }
+.drawer{
+  position:fixed;top:0;left:0;bottom:0;width:min(84vw,330px);z-index:50;
+  background:var(--card);transform:translateX(-102%);
+  transition:transform .42s var(--ease);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-lift);
+  padding-top:var(--safe-t);
+}
+.drawer.visible{transform:none;}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px 14px 8px;}
+.drawer-head h3{font-size:15px;font-weight:600;margin:0 0 0 6px;}
+.drawer-list{flex:1;overflow-y:auto;padding:6px 12px calc(var(--safe-b) + 18px);}
+.drawer-group{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);padding:16px 10px 6px;}
+.conv-row{
+  width:100%;display:flex;align-items:center;gap:10px;text-align:left;
+  padding:11px 12px;border-radius:14px;color:var(--text);
+  transition:background .25s var(--ease);
+}
+.conv-row:hover{background:var(--surface);}
+.conv-row.active{background:var(--accent-wash);}
+.conv-row .conv-main{flex:1;min-width:0;}
+.conv-row .conv-title{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.conv-row .conv-time{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.conv-row .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+.new-chat-row{
+  width:100%;display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;
+  background:var(--surface);font-size:14px;font-weight:600;margin:4px 0 2px;
+}
+.new-chat-row svg{width:17px;height:17px;}
+.empty-note{padding:24px 12px;font-size:13px;color:var(--muted);text-align:center;}
 
-    /* ---------- Persona dropdown ---------- */
-    #persona-dropdown {
-        position: absolute; top: 48px; right: 46px; width: 190px;
-        background: #fff; border-radius: 16px; box-shadow: 0 14px 34px rgba(28,28,34,0.16);
-        border: 1px solid var(--line); padding: 8px; z-index: 25;
-        opacity: 0; transform: translateY(-6px) scale(0.97); pointer-events: none;
-        transition: all 220ms cubic-bezier(.22,1,.36,1);
-    }
-    #persona-dropdown.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-    .persona-option {
-        display: flex; flex-direction: column; gap: 1px; padding: 9px 10px; border-radius: 10px; cursor: pointer;
-        transition: background 160ms ease;
-    }
-    .persona-option:hover, .persona-option:active { background: #F5F6FB; }
-    .persona-option.selected { background: linear-gradient(135deg, rgba(184,196,255,0.25), rgba(255,201,222,0.2)); }
-    .persona-option-name { font-weight: 600; font-size: 13.5px; }
-    .persona-option-desc { font-size: 11.5px; color: var(--muted); }
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;max-height:88dvh;
+  background:var(--card);border-radius:28px 28px 0 0;
+  transform:translateY(102%);transition:transform .45s var(--ease);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-lift);
+}
+.sheet.visible{transform:none;}
+.sheet-grab{width:38px;height:4px;border-radius:999px;background:var(--line);margin:10px auto 2px;}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:10px 20px 4px;}
+.sheet-head h3{font-size:17px;font-weight:600;margin:0;letter-spacing:-.2px;}
+.sheet-body{overflow-y:auto;padding:12px 18px calc(var(--safe-b) + 22px);}
 
-    /* ---------- Status / response card ---------- */
-    #status-card {
-        position: absolute; left: 16px; right: 16px; bottom: 108px;
-        background: #fff; border-radius: 22px; padding: 14px 18px 16px;
-        box-shadow: 0 14px 34px rgba(28,28,34,0.1); z-index: 8;
-        transition: opacity 300ms ease;
-    }
-    .airc-card-handle { width: 36px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 10px; }
-    .airc-card-dots { display: none; gap: 4px; margin-bottom: 6px; }
-    .airc-card-dots.visible { display: flex; }
-    .airc-card-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--primary-2); opacity: 0.35; animation: airc-dot-pulse 1.2s ease-in-out infinite; }
-    .airc-card-dots span:nth-child(2) { animation-delay: 0.15s; }
-    .airc-card-dots span:nth-child(3) { animation-delay: 0.3s; }
-    @keyframes airc-dot-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-    .airc-card-title { font-weight: 700; font-size: 15px; }
-    .airc-card-subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
-    .airc-card-response { display: none; font-size: 14.5px; line-height: 1.5; margin-top: 2px; max-height: 4.6em; overflow: hidden; position: relative; }
-    .airc-card-response.visible { display: block; }
-    .airc-card-response.expanded { max-height: none; }
-    .airc-card-response.expandable { cursor: pointer; padding-right: 22px; }
-    .airc-card-chevron { position: absolute; right: 0; top: 2px; color: var(--muted); transition: transform 250ms ease; }
-    .airc-card-response.expanded .airc-card-chevron { transform: rotate(180deg); }
+.section-label{font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin:20px 4px 10px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin:0 0 6px 4px;}
+.field input[type=text],.field input[type=password]{
+  width:100%;height:48px;padding:0 15px;border-radius:15px;border:1px solid var(--line);
+  background:var(--surface);font-size:14.5px;color:var(--text);outline:none;
+  transition:border-color .25s var(--ease),background .25s var(--ease);
+}
+.field input:focus{border-color:var(--accent-soft);background:var(--card);}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;}
+.row-between .rb-title{font-size:14.5px;font-weight:500;}
+.row-between .rb-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.switch{position:relative;width:48px;height:28px;flex-shrink:0;}
+.switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
+.switch .track{
+  position:absolute;inset:0;border-radius:999px;background:#E3E3EC;pointer-events:none;
+  transition:background .3s var(--ease);
+}
+.switch .thumb{
+  position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.14);pointer-events:none;transition:transform .3s var(--ease);
+}
+.switch input:checked ~ .track{background:var(--accent);}
+.switch input:checked ~ .thumb{transform:translateX(20px);}
+.seg{display:flex;gap:8px;padding:4px;}
+.seg-item{
+  flex:1;height:42px;border-radius:14px;background:var(--surface);color:var(--muted);
+  font-size:13.5px;font-weight:500;transition:all .3s var(--ease);border:1px solid transparent;
+}
+.seg-item.selected{background:var(--accent-wash);color:var(--accent);border-color:#DDE3FF;font-weight:600;}
+.privacy-note{font-size:11.5px;line-height:1.6;color:var(--muted);background:var(--surface);border-radius:14px;padding:12px 14px;margin-top:16px;}
+.sheet-actions{display:flex;gap:10px;margin-top:20px;}
+.sheet-actions .btn{flex:1;height:50px;}
 
-    /* ---------- Model / avatar ---------- */
-    #model-container { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .airc-model-glow {
-        position: absolute; width: 70vmin; height: 70vmin; max-width: 520px; max-height: 520px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(184,196,255,0.55) 0%, rgba(255,201,222,0.25) 45%, rgba(255,255,255,0) 72%);
-        filter: blur(2px); opacity: 0.55; transform: scale(1);
-        transition: opacity 500ms ease-in-out, transform 2.6s ease-in-out; pointer-events: none;
-    }
-    .airc-state-idle .airc-model-glow { opacity: 0.35; animation: airc-breathe 6s ease-in-out infinite; }
-    .airc-state-listening .airc-model-glow { opacity: 0.45; animation: airc-shimmer 3.2s ease-in-out infinite; }
-    .airc-state-thinking .airc-model-glow { opacity: 0.28; animation: none; transform: scale(0.97); }
-    .airc-state-speaking .airc-model-glow {
-        opacity: 0.75; background: radial-gradient(circle, rgba(143,166,255,0.75) 0%, rgba(255,201,222,0.3) 45%, rgba(255,255,255,0) 72%);
-        animation: airc-speak-pulse 2.4s ease-in-out infinite;
-    }
-    @keyframes airc-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
-    @keyframes airc-shimmer { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.5; } }
-    @keyframes airc-speak-pulse { 0%, 100% { transform: scale(1); opacity: 0.65; } 50% { transform: scale(1.08); opacity: 0.85; } }
-    @media (prefers-reduced-motion: reduce) { .airc-model-glow { animation: none !important; transition: opacity 300ms ease; } }
+/* voice cards */
+.voice-card{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px;
+  border:1px solid var(--line);background:var(--card);margin-bottom:10px;
+  transition:border-color .3s var(--ease),background .3s var(--ease),box-shadow .3s var(--ease);
+}
+.voice-card.selected{border-color:var(--accent-soft);background:var(--accent-wash);}
+.voice-card .vc-main{flex:1;min-width:0;}
+.voice-card .vc-name{font-size:14.5px;font-weight:600;}
+.voice-card .vc-desc{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5;}
+.voice-card .vc-select{
+  height:36px;padding:0 16px;border-radius:12px;font-size:13px;font-weight:600;
+  background:var(--text);color:#fff;flex-shrink:0;transition:transform .25s var(--ease);
+}
+.voice-card .vc-select:active{transform:scale(.95);}
+.voice-card.selected .vc-select{background:var(--accent);}
+.add-voice-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  height:50px;border-radius:18px;border:1px dashed #D9DCEA;color:var(--accent);
+  font-size:14px;font-weight:600;background:transparent;margin-top:4px;
+  transition:background .25s var(--ease);
+}
+.add-voice-btn:hover{background:var(--accent-wash);}
+.add-voice-form{display:none;margin-top:12px;padding:14px;border-radius:18px;background:var(--surface);}
+.add-voice-form.visible{display:block;animation:msgIn .3s var(--ease);}
 
-    /* ---------- Bottom row: nav pill + fab ---------- */
-    .airc-bottom-row {
-        position: absolute; left: 16px; right: 16px; bottom: 22px;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 10;
-    }
-    .airc-bottom-nav {
-        flex: 1; position: relative; display: flex; align-items: center; gap: 4px;
-        background: #fff; border-radius: 999px; padding: 8px;
-        box-shadow: 0 10px 28px rgba(28,28,34,0.1);
-    }
-    .airc-nav-pill-slide {
-        position: absolute; top: 8px; bottom: 8px; left: 8px;
-        width: calc(50% - 8px);
-        background: var(--ink); border-radius: 999px;
-        transition: transform 320ms cubic-bezier(.22,1,.36,1);
-        z-index: 0;
-    }
-    .airc-nav-item {
-        position: relative; z-index: 1; border: none; background: transparent; cursor: pointer;
-        color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 6px;
-        padding: 10px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
-        transition: color 220ms ease; flex: 1; min-width: 0;
-    }
-    .airc-nav-item span.nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 92px; }
-    .airc-nav-item.active { color: #fff; }
-    .airc-nav-item svg, .airc-nav-item i { flex-shrink: 0; }
-    .airc-fab {
-        width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        background: var(--ink); color: #fff;
-        box-shadow: 0 10px 26px rgba(28,28,34,0.24);
-        transition: transform 260ms cubic-bezier(.22,1,.36,1), box-shadow 260ms ease, background 260ms ease;
-        flex-shrink: 0;
-    }
-    .airc-fab:active { transform: scale(0.92); }
-    .airc-fab.is-listening {
-        background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
-        box-shadow: 0 0 0 7px rgba(143,166,255,0.16), 0 10px 26px rgba(143,166,255,0.35);
-        animation: airc-fab-pulse 2.2s ease-in-out infinite;
-    }
-    @keyframes airc-fab-pulse {
-        0%, 100% { box-shadow: 0 0 0 7px rgba(143,166,255,0.16), 0 10px 26px rgba(143,166,255,0.35); }
-        50% { box-shadow: 0 0 0 11px rgba(143,166,255,0.1), 0 10px 26px rgba(143,166,255,0.35); }
-    }
+/* popovers */
+.popover{
+  position:fixed;z-index:60;min-width:200px;background:var(--card);border:1px solid var(--line);
+  border-radius:20px;box-shadow:var(--shadow-lift);padding:8px;
+  opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;
+  transition:opacity .28s var(--ease),transform .28s var(--ease);
+}
+.popover.visible{opacity:1;transform:none;pointer-events:auto;}
+.popover .pop-label{font-size:10.5px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);padding:8px 12px 6px;}
+.pop-item{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 12px;border-radius:14px;font-size:14px;text-align:left;color:var(--text);
+  transition:background .25s var(--ease);
+}
+.pop-item:hover{background:var(--surface);}
+.pop-item .pi-sub{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;}
+.pop-item svg{width:16px;height:16px;color:var(--accent);}
+.pop-item.selected{background:var(--accent-wash);}
 
-    /* ---------- Captions quick dropup ---------- */
-    #captions-dropup {
-        position: absolute; bottom: 86px; right: 16px; width: 210px;
-        background: #fff; border-radius: 16px; box-shadow: 0 14px 34px rgba(28,28,34,0.16);
-        border: 1px solid var(--line); padding: 14px 16px; z-index: 25;
-        opacity: 0; transform: translateY(8px) scale(0.97); pointer-events: none;
-        transition: all 220ms cubic-bezier(.22,1,.36,1);
-    }
-    #captions-dropup.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-    #captions-dropup .settings-toggle-row { padding: 0; }
-    #captions-dropup label { font-size: 13.5px; font-weight: 600; }
+/* toast */
+#toast{
+  position:fixed;left:50%;bottom:calc(var(--safe-b) + 96px);transform:translate(-50%,14px);
+  background:var(--text);color:#fff;font-size:13.5px;padding:12px 18px;border-radius:16px;
+  max-width:88vw;text-align:center;opacity:0;pointer-events:none;z-index:80;
+  transition:opacity .35s var(--ease),transform .35s var(--ease);
+}
+#toast.visible{opacity:1;transform:translate(-50%,0);}
 
-    /* ---------- History screen ---------- */
-    .airc-screen-overlay {
-        position: absolute; inset: 0; display: flex; flex-direction: column;
-        background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
-        transform: translateX(100%); transition: transform 380ms cubic-bezier(.22,1,.36,1); z-index: 30;
-    }
-    .airc-screen-overlay.active { transform: translateX(0); }
-    .airc-overlay-body { padding: 84px 20px 24px; overflow-y: auto; height: 100%; }
-    .airc-history-list { display: flex; flex-direction: column; gap: 2px; }
-    .airc-history-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px; border-bottom: 1px solid var(--line); }
-    .airc-history-text { font-size: 14.5px; font-weight: 500; }
-    .airc-history-time { font-size: 12px; color: var(--muted); margin-top: 3px; }
-    .airc-history-empty { color: var(--muted); font-size: 14px; text-align: center; margin-top: 40px; }
+@media (min-width:760px){
+  .composer-wrap,.home-body{max-width:760px;margin:0 auto;width:100%;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition-duration:.01ms !important;}
+}
 </style>
 </head>
 <body>
 <div id="app">
 
-    <!-- Splash Screen -->
-    <div id="screen-splash" class="airc-screen active">
-        <div class="airc-splash-blob"></div>
-        <div class="airc-logo">AirClia</div>
-        <div class="airc-tagline">Your AI companion that listens and helps.</div>
-        <div class="airc-dots"><span class="active"></span><span></span><span></span></div>
+  <!-- ============ MICROPHONE PERMISSION ============ -->
+  <section id="screen-permission" class="screen" aria-label="Microphone setup">
+    <div class="perm-card">
+      <div class="perm-icon" id="perm-icon" aria-hidden="true"></div>
+      <h1>Microphone</h1>
+      <p>AirC talks with you out loud. Allow microphone access so AirClia can hear you and reply naturally.</p>
+      <button id="btn-allow-mic" class="btn wide">Proceed</button>
+      <div id="perm-error" class="perm-error">Mic access needed for AirC to work.</div>
+      <button id="btn-retry-mic" class="btn ghost wide" style="display:none;margin-top:12px;">Try again</button>
+    </div>
+  </section>
+
+  <!-- ============ DEFAULT HOME (chat) ============ -->
+  <section id="screen-home" class="screen" aria-label="Conversation home">
+    <header class="app-header">
+      <div class="h-left">
+        <button id="btn-history" class="icon-btn" aria-label="Chat history"></button>
+      </div>
+      <div class="h-title"><strong>AirClia</strong></div>
+      <div class="h-right">
+        <button id="btn-new-home" class="icon-btn" aria-label="New conversation"></button>
+        <button id="btn-persona-home" class="icon-btn" aria-label="Choose persona"></button>
+      </div>
+    </header>
+
+    <div class="home-body" id="home-body">
+      <div class="home-empty" id="home-empty">
+        <div class="orb" aria-hidden="true"></div>
+        <h2>Hey there.</h2>
+        <p>Type something, or tap the mic to start a live conversation with AirClia.</p>
+      </div>
     </div>
 
-    <!-- Permission Screen -->
-    <div id="screen-permission" class="airc-screen">
-        <div class="airc-logo" style="font-size:26px;margin-bottom:4px;">AirClia</div>
-        <div class="airc-permission-card">
-            <div class="airc-permission-row">
-                <span class="airc-wave-icon" id="permission-icon"></span>
-                <span>Microphone</span>
-            </div>
-            <button id="btn-allow-mic" class="airc-btn" style="width:100%;">proceed</button>
+    <div class="composer-wrap">
+      <div class="composer">
+        <label for="composer-input" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Message AirClia</label>
+        <textarea id="composer-input" rows="1" placeholder="How can I help you?"></textarea>
+        <div class="composer-row">
+          <button id="btn-attach" class="round-btn" aria-label="More actions"></button>
+          <div class="spacer"></div>
+          <button id="btn-voice-chip" class="chip-btn" aria-label="Change voice"><span id="voice-chip-label">AirClia Voice</span></button>
+          <button id="btn-mic-home" class="round-btn primary" aria-label="Start voice conversation"></button>
         </div>
-        <div id="permission-error" class="airc-error-msg">Mic access needed for AirClia to work.</div>
-        <button id="btn-retry-mic" class="airc-btn airc-btn-ghost" style="display:none;">Try Again</button>
-        <div class="airc-dots" style="margin-top:8px;"><span></span><span class="active"></span><span></span></div>
+      </div>
     </div>
+  </section>
 
-    <!-- Main Screen -->
-    <div id="screen-main" class="airc-screen">
-        <div id="model-container"></div>
+  <!-- ============ ASSISTANT (voice-first) ============ -->
+  <section id="screen-assistant" class="screen" aria-label="AirClia voice assistant">
+    <div id="model-container"></div>
 
-        <div class="airc-topbar">
-            <button id="btn-back-main" class="airc-icon-circle" aria-label="History"></button>
-            <div class="airc-topbar-title">AirClia</div>
-            <div class="airc-header-actions">
-                <button id="btn-persona" class="airc-icon-circle airc-icon-circle-light airc-icon-circle-sm" aria-label="Persona"></button>
-                <button id="btn-new-chat" class="airc-icon-circle airc-icon-circle-sm" aria-label="New chat"></button>
-                <button id="btn-open-settings" class="airc-icon-circle airc-icon-circle-light airc-icon-circle-sm" aria-label="Settings"></button>
-                <div id="persona-dropdown"></div>
-            </div>
-        </div>
+    <header class="app-header">
+      <div class="h-left">
+        <button id="btn-profile" class="avatar-btn" aria-label="Selected voice"></button>
+      </div>
+      <div class="h-title">
+        <strong>AirClia</strong>
+        <button id="btn-voice-name" class="h-voice" aria-label="Change voice">AirClia Voice</button>
+      </div>
+      <div class="h-right">
+        <button id="btn-new-assistant" class="icon-btn tinted" aria-label="New conversation"></button>
+      </div>
+    </header>
 
-        <div id="status-card">
-            <div class="airc-card-handle"></div>
-            <div class="airc-card-dots" id="card-dots"><span></span><span></span><span></span></div>
-            <div class="airc-card-title" id="card-title">How can I help you today?</div>
-            <div class="airc-card-subtitle" id="card-subtitle">Tap the mic and start talking.</div>
-            <div class="airc-card-response" id="card-response"></div>
-        </div>
+    <div id="captions" aria-live="polite"></div>
 
-        <div id="captions-dropup">
-            <div class="settings-toggle-row">
-                <label for="toggle-captions-quick">Show Captions</label>
-                <div class="switch">
-                    <input type="checkbox" id="toggle-captions-quick" />
-                    <span class="switch-track"></span>
-                </div>
-            </div>
-        </div>
+    <nav class="floating-nav" aria-label="Assistant controls">
+      <button id="nav-back" class="nav-item" aria-label="Back to chat"></button>
+      <button id="btn-mic" class="nav-mic" aria-label="Toggle microphone" aria-pressed="false"></button>
+      <button id="nav-more" class="nav-item" aria-label="Quick settings"></button>
+    </nav>
+  </section>
 
-        <div class="airc-bottom-row">
-            <div class="airc-bottom-nav">
-                <div class="airc-nav-pill-slide" id="nav-pill-slide"></div>
-                <button class="airc-nav-item active" id="nav-home" aria-label="Voice"></button>
-                <button class="airc-nav-item" id="nav-settings" aria-label="Settings"></button>
-            </div>
-            <button id="btn-mic" class="airc-fab" aria-label="Toggle microphone"></button>
-        </div>
+  <!-- ============ OVERLAYS ============ -->
+  <div id="scrim" class="scrim"></div>
+
+  <aside id="drawer-history" class="drawer" aria-label="Conversation history">
+    <div class="drawer-head">
+      <h3>Chats</h3>
+      <button id="btn-drawer-close" class="icon-btn" aria-label="Close history"></button>
     </div>
-
-    <!-- Voice Select Screen -->
-    <div id="screen-voice-select" class="airc-screen-overlay">
-        <div class="airc-topbar">
-            <button id="btn-voice-back" class="airc-icon-circle" aria-label="Back"></button>
-            <div class="airc-topbar-title">Choose a voice</div>
-            <div style="width:40px;"></div>
-        </div>
-        <div class="airc-overlay-body">
-            <div class="airc-voice-grid" id="voice-grid"></div>
-            <div class="airc-voice-hint">Need an ElevenLabs key first? <a id="voice-hint-settings">Open settings</a></div>
-        </div>
+    <div class="drawer-list">
+      <button id="btn-new-drawer" class="new-chat-row"><span id="new-chat-icon"></span>New chat</button>
+      <div id="conv-list"></div>
     </div>
+  </aside>
 
-    <!-- History Screen -->
-    <div id="screen-history" class="airc-screen-overlay">
-        <div class="airc-topbar">
-            <button id="btn-history-back" class="airc-icon-circle" aria-label="Back"></button>
-            <div class="airc-topbar-title">History</div>
-            <button id="btn-history-clear" class="airc-icon-circle airc-icon-circle-light" aria-label="Clear history"></button>
-        </div>
-        <div class="airc-overlay-body">
-            <div class="airc-history-list" id="history-list"></div>
-        </div>
+  <div id="sheet-voice" class="sheet" aria-label="Voice selection">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3>Choose a voice</h3>
+      <button id="btn-voice-close" class="icon-btn" aria-label="Close voice selection"></button>
     </div>
-
-    <div id="toast"></div>
-
-    <!-- Settings -->
-    <div id="settings-overlay"></div>
-    <div id="settings-panel">
-        <button id="settings-close" aria-label="Close settings"></button>
-        <div class="settings-title">Settings</div>
-
-        <div class="settings-section">
-            <h3>OpenRouter</h3>
-            <div class="settings-field">
-                <label for="input-or-key">API Key</label>
-                <input type="password" id="input-or-key" placeholder="sk-or-..." autocomplete="off" />
-            </div>
-            <div class="settings-field">
-                <label for="input-or-model">Model</label>
-                <input type="text" id="input-or-model" placeholder="openai/gpt-4o-mini" autocomplete="off" />
-            </div>
+    <div class="sheet-body">
+      <div id="voice-list"></div>
+      <button id="btn-add-voice" class="add-voice-btn"><span id="add-voice-icon"></span>Add ElevenLabs voice</button>
+      <div id="add-voice-form" class="add-voice-form">
+        <div class="field">
+          <label for="input-new-voice-name">Name (optional)</label>
+          <input type="text" id="input-new-voice-name" placeholder="Rachel" autocomplete="off" />
         </div>
-
-        <div class="settings-section">
-            <h3>ElevenLabs</h3>
-            <div class="settings-field">
-                <label for="input-el-key">API Key</label>
-                <input type="password" id="input-el-key" placeholder="ElevenLabs API key" autocomplete="off" />
-            </div>
-            <div class="settings-field">
-                <label for="input-el-voice">Voice ID</label>
-                <input type="text" id="input-el-voice" placeholder="Voice ID" autocomplete="off" />
-            </div>
-            <button id="btn-test-voice" class="airc-btn airc-btn-ghost" style="width:100%;">Test Voice</button>
-            <button id="btn-pick-voice" class="airc-btn airc-btn-ghost" style="width:100%;margin-top:8px;">Browse Voices</button>
+        <div class="field">
+          <label for="input-new-voice-id">Voice ID</label>
+          <input type="text" id="input-new-voice-id" placeholder="Paste ElevenLabs Voice ID" autocomplete="off" />
         </div>
-
-        <div class="settings-section">
-            <h3>Preferences</h3>
-            <div class="settings-toggle-row">
-                <label for="toggle-captions">Show Captions</label>
-                <div class="switch">
-                    <input type="checkbox" id="toggle-captions" />
-                    <span class="switch-track"></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="settings-hint">
-            Your API keys are stored only in this browser (localStorage) and are sent directly from your device to OpenRouter / ElevenLabs. AirClia has no server of its own.
-        </div>
-
-        <div class="settings-actions">
-            <button id="btn-settings-save" class="airc-btn">Save</button>
-        </div>
+        <button id="btn-save-voice" class="btn accent wide" style="height:46px;">Select</button>
+      </div>
     </div>
+  </div>
 
+  <div id="sheet-settings" class="sheet" aria-label="Settings">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3>Configuration</h3>
+      <button id="btn-settings-close" class="icon-btn" aria-label="Close settings"></button>
+    </div>
+    <div class="sheet-body">
+      <div class="section-label">AI</div>
+      <div class="field">
+        <label for="input-or-key">OpenRouter API key</label>
+        <input type="password" id="input-or-key" placeholder="Paste OpenRouter API key" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="input-or-model">Model</label>
+        <input type="text" id="input-or-model" placeholder="openai/gpt-4o-mini" autocomplete="off" list="model-suggestions" />
+        <datalist id="model-suggestions">
+          <option value="openai/gpt-4o-mini"></option>
+          <option value="anthropic/claude-3.5-haiku"></option>
+          <option value="google/gemini-2.0-flash-001"></option>
+          <option value="meta-llama/llama-3.3-70b-instruct"></option>
+        </datalist>
+      </div>
+
+      <div class="section-label">Voice</div>
+      <div class="field">
+        <label for="input-el-key">ElevenLabs API key</label>
+        <input type="password" id="input-el-key" placeholder="Paste ElevenLabs API key" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="input-el-voice">Default voice ID</label>
+        <input type="text" id="input-el-voice" placeholder="Voice ID" autocomplete="off" />
+      </div>
+
+      <div class="section-label">Behavior</div>
+      <div class="row-between">
+        <div>
+          <div class="rb-title">Show captions</div>
+          <div class="rb-sub">Display what AirClia says on screen.</div>
+        </div>
+        <label class="switch" aria-label="Show captions">
+          <input type="checkbox" id="toggle-captions" />
+          <span class="track"></span><span class="thumb"></span>
+        </label>
+      </div>
+      <div style="padding:6px 4px 0;">
+        <div class="rb-title" style="margin-bottom:8px;">Persona &amp; roast intensity</div>
+        <div class="seg" id="roast-options">
+          <button class="seg-item" data-value="mild">Mild</button>
+          <button class="seg-item" data-value="normal">Normal</button>
+          <button class="seg-item" data-value="savage">Savage</button>
+        </div>
+      </div>
+
+      <div class="privacy-note">Your API keys are stored locally in this browser and sent directly to the selected provider.</div>
+
+      <div class="sheet-actions">
+        <button id="btn-test-voice" class="btn ghost">Test voice</button>
+        <button id="btn-settings-save" class="btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="popover-persona" class="popover" role="menu" aria-label="Persona">
+    <div class="pop-label">Persona</div>
+    <button class="pop-item" data-persona="friendly" role="menuitem"><span>Friendly<span class="pi-sub">Warm, gentle nudges only.</span></span><span class="check"></span></button>
+    <button class="pop-item" data-persona="balanced" role="menuitem"><span>Balanced<span class="pi-sub">Witty with a bit of bite.</span></span><span class="check"></span></button>
+    <button class="pop-item" data-persona="savage" role="menuitem"><span>Savage<span class="pi-sub">No mercy for low effort.</span></span><span class="check"></span></button>
+  </div>
+
+  <div id="popover-quick" class="popover" role="menu" aria-label="Quick settings">
+    <div class="pop-item" style="cursor:default;">
+      <span>Show captions</span>
+      <label class="switch" aria-label="Show captions">
+        <input type="checkbox" id="toggle-captions-quick" />
+        <span class="track"></span><span class="thumb"></span>
+      </label>
+    </div>
+    <button class="pop-item" id="quick-persona" role="menuitem"><span>Persona</span></button>
+    <button class="pop-item" id="quick-settings" role="menuitem"><span>Configuration</span></button>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
 <script type="module">
@@ -492,73 +590,78 @@ import { AirCModel } from "./model/model.js";
 import { AirCVoice } from "./voice/voice.js";
 import { AirCBrain } from "./brain/brain.js";
 
-// ---------------------------------------------------------------------------
-// Setup
-// ---------------------------------------------------------------------------
+/* ===================================================================
+   Wiring — AirC.html is the orchestrator only. All domain logic lives
+   inside config.js / brain.js / voice.js / model.js.
+   =================================================================== */
 const config = new AirCConfig();
-const brain = new AirCBrain(config);
-const voice = new AirCVoice(config);
-const model = new AirCModel(document.getElementById("model-container"));
+const brain  = new AirCBrain(config);
+const voice  = new AirCVoice(config);
+const model  = new AirCModel(document.getElementById("model-container"));
 
-const FREE_VOICES = [
-    { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", desc: "Calm, clear narration" },
-    { id: "AZnzlk1XvdvUeBnXmlld", name: "Domi", desc: "Strong and confident" },
-    { id: "EXAVITQu4vr4xnSDxMaL", name: "Bella", desc: "Soft and friendly" },
-    { id: "ErXwobaYiN019PkySvjV", name: "Antoni", desc: "Warm, well-rounded" },
-    { id: "MF3mGyEYCl7XYWbV9V6O", name: "Elli", desc: "Youthful and expressive" },
-    { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", desc: "Deep, grounded tone" }
-];
-
-const PERSONAS = [
-    { value: "mild", name: "Gentle", desc: "Warm & encouraging" },
-    { value: "normal", name: "Balanced", desc: "Friendly & direct" },
-    { value: "savage", name: "Savage", desc: "Bold, no filter" }
-];
-
+const $ = (id) => document.getElementById(id);
 const els = {
-    screenPermission: document.getElementById("screen-permission"),
-    screenMain: document.getElementById("screen-main"),
-    btnAllowMic: document.getElementById("btn-allow-mic"),
-    btnRetryMic: document.getElementById("btn-retry-mic"),
-    permissionError: document.getElementById("permission-error"),
-    btnMic: document.getElementById("btn-mic"),
-    screenSplash: document.getElementById("screen-splash"),
-    permissionIcon: document.getElementById("permission-icon"),
-    btnBackMain: document.getElementById("btn-back-main"),
-    statusCard: document.getElementById("status-card"),
-    cardDots: document.getElementById("card-dots"),
-    cardTitle: document.getElementById("card-title"),
-    cardSubtitle: document.getElementById("card-subtitle"),
-    cardResponse: document.getElementById("card-response"),
-    navHome: document.getElementById("nav-home"),
-    navSettings: document.getElementById("nav-settings"),
-    navPillSlide: document.getElementById("nav-pill-slide"),
-    btnPersona: document.getElementById("btn-persona"),
-    personaDropdown: document.getElementById("persona-dropdown"),
-    btnNewChat: document.getElementById("btn-new-chat"),
-    btnOpenSettings: document.getElementById("btn-open-settings"),
-    captionsDropup: document.getElementById("captions-dropup"),
-    toggleCaptionsQuick: document.getElementById("toggle-captions-quick"),
-    screenVoiceSelect: document.getElementById("screen-voice-select"),
-    btnVoiceBack: document.getElementById("btn-voice-back"),
-    voiceGrid: document.getElementById("voice-grid"),
-    voiceHintSettings: document.getElementById("voice-hint-settings"),
-    screenHistory: document.getElementById("screen-history"),
-    btnHistoryBack: document.getElementById("btn-history-back"),
-    btnHistoryClear: document.getElementById("btn-history-clear"),
-    historyList: document.getElementById("history-list"),
-    toast: document.getElementById("toast"),
-    settingsOverlay: document.getElementById("settings-overlay"),
-    settingsPanel: document.getElementById("settings-panel"),
-    settingsClose: document.getElementById("settings-close"),
-    inputOrKey: document.getElementById("input-or-key"),
-    inputOrModel: document.getElementById("input-or-model"),
-    inputElKey: document.getElementById("input-el-key"),
-    inputElVoice: document.getElementById("input-el-voice"),
-    toggleCaptions: document.getElementById("toggle-captions"),
-    btnTestVoice: document.getElementById("btn-test-voice"),
-    btnPickVoice: document.getElementById("btn-pick-voice"),
-    btnSettingsSave: document.getElementById("btn-settings-save"),
+  screens: {
+    permission: $("screen-permission"),
+    home: $("screen-home"),
+    assistant: $("screen-assistant")
+  },
+  permIcon: $("perm-icon"),
+  btnAllowMic: $("btn-allow-mic"),
+  btnRetryMic: $("btn-retry-mic"),
+  permError: $("perm-error"),
+
+  btnHistory: $("btn-history"),
+  btnNewHome: $("btn-new-home"),
+  btnPersonaHome: $("btn-persona-home"),
+  homeBody: $("home-body"),
+  homeEmpty: $("home-empty"),
+  composerInput: $("composer-input"),
+  btnAttach: $("btn-attach"),
+  btnVoiceChip: $("btn-voice-chip"),
+  voiceChipLabel: $("voice-chip-label"),
+  btnMicHome: $("btn-mic-home"),
+
+  btnProfile: $("btn-profile"),
+  btnVoiceName: $("btn-voice-name"),
+  btnNewAssistant: $("btn-new-assistant"),
+  captions: $("captions"),
+  navBack: $("nav-back"),
+  navMore: $("nav-more"),
+  btnMic: $("btn-mic"),
+
+  scrim: $("scrim"),
+  drawer: $("drawer-history"),
+  btnDrawerClose: $("btn-drawer-close"),
+  btnNewDrawer: $("btn-new-drawer"),
+  newChatIcon: $("new-chat-icon"),
+  convList: $("conv-list"),
+
+  sheetVoice: $("sheet-voice"),
+  btnVoiceClose: $("btn-voice-close"),
+  voiceList: $("voice-list"),
+  btnAddVoice: $("btn-add-voice"),
+  addVoiceIcon: $("add-voice-icon"),
+  addVoiceForm: $("add-voice-form"),
+  inputNewVoiceName: $("input-new-voice-name"),
+  inputNewVoiceId: $("input-new-voice-id"),
+  btnSaveVoice: $("btn-save-voice"),
+
+  sheetSettings: $("sheet-settings"),
+  btnSettingsClose: $("btn-settings-close"),
+  inputOrKey: $("input-or-key"),
+  inputOrModel: $("input-or-model"),
+  inputElKey: $("input-el-key"),
+  inputElVoice: $("input-el-voice"),
+  toggleCaptions: $("toggle-captions"),
+  toggleCaptionsQuick: $("toggle-captions-quick"),
+  roastOptions: $("roast-options"),
+  btnTestVoice: $("btn-test-voice"),
+  btnSettingsSave: $("btn-settings-save"),
+
+  popPersona: $("popover-persona"),
+  popQuick: $("popover-quick"),
+  toast: $("toast")
 };
 
 model.onError = (msg) => showToast(msg);
@@ -567,572 +670,721 @@ let silenceTimer = null;
 let recognition = null;
 let recognitionActive = false;
 let micEnabled = false;
-let voiceSelectFirstRun = false;
+let modelMounted = false;
+let currentSessionId = null;
+let captionTimer = null;
+let pendingVoiceThenAssistant = false;
 const SILENCE_TIMEOUT_MS = 10000;
-const MIC_GRANTED_KEY = "airclia_mic_granted";
 
-// ---------------------------------------------------------------------------
-// Icons
-// ---------------------------------------------------------------------------
-const HUMAN_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`;
+/* ---------------------------- icons ---------------------------- */
+const HUMAN_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>`;
+const icon = (name, size = 19) => `<i data-lucide="${name}" style="width:${size}px;height:${size}px;"></i>`;
 
 function renderIcons() {
-    els.btnMic.innerHTML = `<i data-lucide="audio-lines" style="width:22px;height:22px;"></i>`;
-    els.permissionIcon.innerHTML = `<i data-lucide="mic" style="width:16px;height:16px;"></i>`;
-    els.btnBackMain.innerHTML = `<i data-lucide="chevron-left" style="width:20px;height:20px;"></i>`;
-    els.btnPersona.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i>`;
-    els.btnNewChat.innerHTML = `<i data-lucide="plus" style="width:18px;height:18px;"></i>`;
-    els.btnOpenSettings.innerHTML = `<i data-lucide="sliders-horizontal" style="width:16px;height:16px;"></i>`;
-    els.btnVoiceBack.innerHTML = `<i data-lucide="chevron-left" style="width:20px;height:20px;"></i>`;
-    els.btnHistoryBack.innerHTML = `<i data-lucide="chevron-left" style="width:20px;height:20px;"></i>`;
-    els.btnHistoryClear.innerHTML = `<i data-lucide="trash-2" style="width:16px;height:16px;"></i>`;
-    els.navHome.innerHTML = `${HUMAN_SVG}<span class="nav-label">Choose voice</span>`;
-    els.navSettings.innerHTML = `<i data-lucide="settings" style="width:16px;height:16px;"></i>`;
-    els.settingsClose.innerHTML = `<i data-lucide="x" style="width:20px;height:20px;"></i>`;
-    if (window.lucide) window.lucide.createIcons();
+  els.permIcon.innerHTML = icon("mic", 28);
+  els.btnHistory.innerHTML = icon("panel-left");
+  els.btnNewHome.innerHTML = icon("plus");
+  els.btnPersonaHome.innerHTML = icon("sparkle");
+  els.btnAttach.innerHTML = icon("plus", 18);
+  els.btnVoiceChip.insertAdjacentHTML("afterbegin", icon("audio-lines", 14));
+  els.btnMicHome.innerHTML = icon("mic", 18);
+  els.btnProfile.innerHTML = HUMAN_SVG;
+  els.btnNewAssistant.innerHTML = icon("plus");
+  els.navBack.innerHTML = icon("chevron-left") + "<span>Chat</span>";
+  els.navMore.innerHTML = icon("sliders-horizontal");
+  els.btnMic.innerHTML = icon("mic", 22);
+  els.btnDrawerClose.innerHTML = icon("x");
+  els.btnVoiceClose.innerHTML = icon("x");
+  els.btnSettingsClose.innerHTML = icon("x");
+  els.newChatIcon.innerHTML = icon("plus", 17);
+  els.addVoiceIcon.innerHTML = icon("plus", 17);
+  if (window.lucide) window.lucide.createIcons();
 }
 
-// ---------------------------------------------------------------------------
-// Toast
-// ---------------------------------------------------------------------------
+/* ---------------------------- toast ---------------------------- */
 function showToast(message, duration = 3200) {
-    els.toast.textContent = message;
-    els.toast.classList.add("visible");
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => els.toast.classList.remove("visible"), duration);
+  if (!message) return;
+  els.toast.textContent = message;
+  els.toast.classList.add("visible");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => els.toast.classList.remove("visible"), duration);
 }
 
-// ---------------------------------------------------------------------------
-// Status card
-// ---------------------------------------------------------------------------
-const CARD_STATUS_TEXT = {
-    idle: { title: "How can I help you today?", subtitle: "Tap the mic and start talking." },
-    listening: { title: "Listening...", subtitle: "I'm listening. Please speak." },
-    thinking: { title: "Thinking...", subtitle: "Just a moment, I'm thinking." },
-    speaking: { title: "Speaking...", subtitle: "Here's what I found for you." }
-};
-
-function setCardStatus(state) {
-    const s = CARD_STATUS_TEXT[state] || CARD_STATUS_TEXT.idle;
-    els.cardDots.classList.toggle("visible", state !== "idle");
-    els.cardTitle.textContent = s.title;
-    els.cardSubtitle.textContent = s.subtitle;
-    els.cardSubtitle.style.display = "";
-    els.cardResponse.classList.remove("visible", "expandable", "expanded");
-    els.cardResponse.textContent = "";
+/* --------------------------- screens --------------------------- */
+function showScreen(name) {
+  Object.entries(els.screens).forEach(([key, el]) => el.classList.toggle("active", key === name));
 }
 
-function showResponseCard(text) {
-    if (!config.get("show_captions") || !text) return;
-    els.cardDots.classList.remove("visible");
-    els.cardTitle.textContent = "Here's what I found";
-    els.cardSubtitle.style.display = "none";
-    els.cardResponse.textContent = text;
-    els.cardResponse.classList.add("visible");
-    els.cardResponse.classList.toggle("expandable", text.length > 140);
+function goHome() {
+  stopListening();
+  voice.stop();
+  showScreen("home");
+  renderMessages();
 }
 
-els.cardResponse.addEventListener("click", () => {
-    if (!els.cardResponse.classList.contains("expandable")) return;
-    els.cardResponse.classList.toggle("expanded");
-});
+function goAssistant() {
+  showScreen("assistant");
+  if (!modelMounted) { model.mount(); modelMounted = true; }
+  setAvatarState("idle");
+  if (!brain.history.length) startConversation();
+  else startListening();
+}
 
+/* --------------------- avatar / caption state ------------------- */
 function setAvatarState(state) {
-    model.setState(state);
-    setCardStatus(state);
+  model.setState(state);
+  if (state !== "speaking") hideCaption();
 }
 
-// ---------------------------------------------------------------------------
-// Persona dropdown
-// ---------------------------------------------------------------------------
-function renderPersonaDropdown() {
-    const current = config.get("roast_intensity") || "normal";
-    els.personaDropdown.innerHTML = PERSONAS.map((p) => `
-        <div class="persona-option ${p.value === current ? "selected" : ""}" data-value="${p.value}">
-            <div class="persona-option-name">${p.name}</div>
-            <div class="persona-option-desc">${p.desc}</div>
-        </div>
-    `).join("");
+function showCaption(text) {
+  if (!config.get("show_captions") || !text) return;
+  els.captions.textContent = text;
+  els.captions.classList.add("visible");
+  clearTimeout(captionTimer);
+}
+function hideCaption(delay = 0) {
+  clearTimeout(captionTimer);
+  captionTimer = setTimeout(() => els.captions.classList.remove("visible"), delay);
 }
 
-function togglePersonaDropdown() {
-    renderPersonaDropdown();
-    closeCaptionsDropup();
-    els.personaDropdown.classList.toggle("visible");
+/* ------------------------- overlay plumbing --------------------- */
+function anyOverlayOpen() {
+  return els.drawer.classList.contains("visible")
+    || els.sheetVoice.classList.contains("visible")
+    || els.sheetSettings.classList.contains("visible");
+}
+function syncScrim() { els.scrim.classList.toggle("visible", anyOverlayOpen()); }
+
+function openDrawer() { renderConversations(); els.drawer.classList.add("visible"); syncScrim(); }
+function closeDrawer() { els.drawer.classList.remove("visible"); syncScrim(); }
+
+function openVoiceSheet() { renderVoiceList(); els.sheetVoice.classList.add("visible"); syncScrim(); }
+function closeVoiceSheet() {
+  els.sheetVoice.classList.remove("visible");
+  els.addVoiceForm.classList.remove("visible");
+  syncScrim();
 }
 
-function closePersonaDropdown() { els.personaDropdown.classList.remove("visible"); }
+function openSettings() { populateSettingsForm(); els.sheetSettings.classList.add("visible"); syncScrim(); }
+function closeSettings() { els.sheetSettings.classList.remove("visible"); syncScrim(); }
 
-els.btnPersona.addEventListener("click", (e) => { e.stopPropagation(); togglePersonaDropdown(); });
-els.personaDropdown.addEventListener("click", (e) => {
-    const opt = e.target.closest(".persona-option");
-    if (!opt) return;
-    config.set("roast_intensity", opt.dataset.value);
-    config.save();
-    const p = PERSONAS.find((x) => x.value === opt.dataset.value);
-    showToast(`Persona set to ${p ? p.name : opt.dataset.value}.`);
-    closePersonaDropdown();
-});
-
-// ---------------------------------------------------------------------------
-// Captions quick dropup
-// ---------------------------------------------------------------------------
-function toggleCaptionsDropup() {
-    els.toggleCaptionsQuick.checked = Boolean(config.get("show_captions"));
-    closePersonaDropdown();
-    els.captionsDropup.classList.toggle("visible");
+function closeAllPopovers() {
+  els.popPersona.classList.remove("visible");
+  els.popQuick.classList.remove("visible");
 }
-function closeCaptionsDropup() { els.captionsDropup.classList.remove("visible"); }
+function positionPopover(pop, anchor, align = "right") {
+  pop.classList.add("visible");
+  const a = anchor.getBoundingClientRect();
+  const p = pop.getBoundingClientRect();
+  let top = a.bottom + 8;
+  if (top + p.height > window.innerHeight - 12) top = Math.max(12, a.top - p.height - 8);
+  let left = align === "right" ? a.right - p.width : a.left;
+  left = Math.min(Math.max(12, left), window.innerWidth - p.width - 12);
+  pop.style.top = `${top}px`;
+  pop.style.left = `${left}px`;
+}
 
-els.navSettings.addEventListener("click", (e) => { e.stopPropagation(); toggleCaptionsDropup(); });
-els.toggleCaptionsQuick.addEventListener("change", () => {
-    config.set("show_captions", els.toggleCaptionsQuick.checked);
-    config.save();
-    els.toggleCaptions.checked = els.toggleCaptionsQuick.checked;
-});
-
+els.scrim.addEventListener("click", () => { closeDrawer(); closeVoiceSheet(); closeSettings(); });
 document.addEventListener("click", (e) => {
-    if (!els.personaDropdown.contains(e.target) && e.target !== els.btnPersona) closePersonaDropdown();
-    if (!els.captionsDropup.contains(e.target) && e.target !== els.navSettings) closeCaptionsDropup();
+  if (e.target.closest(".popover")) return;
+  if (e.target.closest("#btn-persona-home,#nav-more,#quick-persona")) return;
+  closeAllPopovers();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  closeAllPopovers(); closeDrawer(); closeVoiceSheet(); closeSettings();
 });
 
-// ---------------------------------------------------------------------------
-// New chat
-// ---------------------------------------------------------------------------
-els.btnNewChat.addEventListener("click", async () => {
-    closePersonaDropdown();
-    closeCaptionsDropup();
-    voice.stop();
-    clearSilenceTimer();
-    setCardStatus("idle");
-    model.setEmotion("neutral");
-    showToast("Starting a new conversation.");
-    await startConversation();
+/* --------------------------- messages --------------------------- */
+function renderMessages() {
+  const session = currentSessionId ? config.getSession(currentSessionId) : null;
+  const msgs = session ? session.messages : [];
+  els.homeBody.innerHTML = "";
+  if (!msgs.length) {
+    els.homeBody.appendChild(els.homeEmpty);
+    return;
+  }
+  msgs.forEach((m) => appendMessageEl(m.role, m.content, false));
+  els.homeBody.scrollTop = els.homeBody.scrollHeight;
+}
+
+function appendMessageEl(role, text, scroll = true) {
+  if (els.homeEmpty.parentNode === els.homeBody) els.homeBody.removeChild(els.homeEmpty);
+  const div = document.createElement("div");
+  div.className = `msg ${role === "user" ? "user" : "ai"}`;
+  if (role === "user") div.textContent = text;
+  else {
+    const who = document.createElement("span");
+    who.className = "who";
+    who.textContent = "AirClia";
+    div.appendChild(who);
+    div.appendChild(document.createTextNode(text));
+  }
+  els.homeBody.appendChild(div);
+  if (scroll) els.homeBody.scrollTop = els.homeBody.scrollHeight;
+  return div;
+}
+
+function ensureSession() {
+  if (!currentSessionId) {
+    currentSessionId = config.createSession("New conversation").id;
+    brain.resetSession();
+  }
+  return currentSessionId;
+}
+
+function recordMessage(role, text) {
+  config.appendMessage(ensureSession(), role, text);
+}
+
+/* ------------------------ new conversation ---------------------- */
+function newConversation() {
+  voice.stop();
+  clearSilenceTimer();
+  hideCaption();
+  brain.resetSession();
+  currentSessionId = config.createSession("New conversation").id;
+  renderMessages();
+  closeDrawer();
+  showToast("New conversation started.");
+}
+
+function openConversation(id) {
+  const session = config.getSession(id);
+  if (!session) return;
+  voice.stop();
+  clearSilenceTimer();
+  currentSessionId = id;
+  brain.loadHistory(session.messages);
+  renderMessages();
+  closeDrawer();
+  showScreen("home");
+}
+
+/* ---------------------- conversation history -------------------- */
+function relativeGroup(ts) {
+  const d = new Date(ts), now = new Date();
+  const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((startOf(now) - startOf(d)) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return "Previous 7 days";
+  return "Older";
+}
+function relativeTime(ts) {
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+function renderConversations() {
+  const sessions = config.getSessions().filter((s) => s.messages.length || s.id === currentSessionId);
+  els.convList.innerHTML = "";
+  if (!sessions.length) {
+    els.convList.innerHTML = `<div class="empty-note">No conversations yet.</div>`;
+    return;
+  }
+  let lastGroup = null;
+  sessions.forEach((s) => {
+    const group = relativeGroup(s.ts);
+    if (group !== lastGroup) {
+      const g = document.createElement("div");
+      g.className = "drawer-group";
+      g.textContent = group;
+      els.convList.appendChild(g);
+      lastGroup = group;
+    }
+    const row = document.createElement("button");
+    row.className = "conv-row" + (s.id === currentSessionId ? " active" : "");
+    row.type = "button";
+    const main = document.createElement("div");
+    main.className = "conv-main";
+    const title = document.createElement("div");
+    title.className = "conv-title";
+    title.textContent = s.title || "Untitled";
+    const time = document.createElement("div");
+    time.className = "conv-time";
+    time.textContent = relativeTime(s.ts);
+    main.append(title, time);
+    row.appendChild(main);
+    if (s.id === currentSessionId) {
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      row.appendChild(dot);
+    }
+    row.addEventListener("click", () => openConversation(s.id));
+    els.convList.appendChild(row);
+  });
+}
+
+/* ---------------------------- personas -------------------------- */
+function renderPersonaPopover() {
+  const current = brain.getPersona();
+  els.popPersona.querySelectorAll(".pop-item").forEach((item) => {
+    const on = item.dataset.persona === current;
+    item.classList.toggle("selected", on);
+    item.setAttribute("aria-checked", String(on));
+    item.querySelector(".check").innerHTML = on ? icon("check", 16) : "";
+  });
+  if (window.lucide) window.lucide.createIcons();
+}
+
+els.popPersona.addEventListener("click", (e) => {
+  const item = e.target.closest("[data-persona]");
+  if (!item) return;
+  brain.setPersona(item.dataset.persona);
+  renderPersonaPopover();
+  closeAllPopovers();
+  showToast(`Persona: ${item.dataset.persona}.`);
 });
 
-// ---------------------------------------------------------------------------
-// Settings panel
-// ---------------------------------------------------------------------------
-function openSettings() {
-    populateSettingsForm();
-    els.settingsOverlay.classList.add("visible");
-    els.settingsPanel.classList.add("visible");
+/* ------------------------ voice selection ----------------------- */
+function currentVoiceLabel() {
+  const v = voice.getCurrentVoice();
+  return v.name || "AirClia Voice";
 }
-function closeSettings() {
-    els.settingsOverlay.classList.remove("visible");
-    els.settingsPanel.classList.remove("visible");
+function syncVoiceLabels() {
+  const label = currentVoiceLabel();
+  els.voiceChipLabel.textContent = label;
+  els.btnVoiceName.textContent = label;
 }
+
+function renderVoiceList() {
+  const currentId = config.get("elevenlabs_voice_id") || "";
+  els.voiceList.innerHTML = "";
+  config.getVoices().forEach((v) => {
+    const card = document.createElement("div");
+    card.className = "voice-card" + (v.id === currentId && config.get("voice_setup_complete") ? " selected" : "");
+    const main = document.createElement("div");
+    main.className = "vc-main";
+    const name = document.createElement("div");
+    name.className = "vc-name";
+    name.textContent = v.name;
+    const desc = document.createElement("div");
+    desc.className = "vc-desc";
+    desc.textContent = v.description;
+    main.append(name, desc);
+    const btn = document.createElement("button");
+    btn.className = "vc-select";
+    btn.type = "button";
+    btn.textContent = v.id === currentId && config.get("voice_setup_complete") ? "Selected" : "Select";
+    btn.setAttribute("aria-label", `Select ${v.name}`);
+    btn.addEventListener("click", () => selectVoice(v));
+    card.append(main, btn);
+    els.voiceList.appendChild(card);
+  });
+}
+
+function selectVoice(v) {
+  voice.setVoice(v);
+  syncVoiceLabels();
+  renderVoiceList();
+  showToast(`Voice set to ${v.name}.`);
+  closeVoiceSheet();
+  if (pendingVoiceThenAssistant) {
+    pendingVoiceThenAssistant = false;
+    config.set("onboarding_complete", true);
+    config.save();
+    goAssistant();
+  }
+}
+
+els.btnAddVoice.addEventListener("click", () => {
+  els.addVoiceForm.classList.toggle("visible");
+  if (els.addVoiceForm.classList.contains("visible")) els.inputNewVoiceId.focus();
+});
+
+els.btnSaveVoice.addEventListener("click", () => {
+  const id = els.inputNewVoiceId.value.trim();
+  if (!id) { showToast("Paste an ElevenLabs Voice ID first."); return; }
+  const entry = config.addCustomVoice({ id, name: els.inputNewVoiceName.value.trim() });
+  els.inputNewVoiceId.value = "";
+  els.inputNewVoiceName.value = "";
+  els.addVoiceForm.classList.remove("visible");
+  if (entry) selectVoice(entry);
+});
+
+/* ---------------------------- settings -------------------------- */
 function populateSettingsForm() {
-    els.inputOrKey.value = config.get("openrouter_api_key") || "";
-    els.inputOrModel.value = config.get("openrouter_model") || "";
-    els.inputElKey.value = config.get("elevenlabs_api_key") || "";
-    els.inputElVoice.value = config.get("elevenlabs_voice_id") || "";
-    els.toggleCaptions.checked = Boolean(config.get("show_captions"));
+  els.inputOrKey.value = config.get("openrouter_api_key") || "";
+  els.inputOrModel.value = config.get("openrouter_model") || "";
+  els.inputElKey.value = config.get("elevenlabs_api_key") || "";
+  els.inputElVoice.value = config.get("elevenlabs_voice_id") || "";
+  els.toggleCaptions.checked = Boolean(config.get("show_captions"));
+  els.toggleCaptionsQuick.checked = Boolean(config.get("show_captions"));
+  setRoastChip(config.get("roast_intensity") || "normal");
 }
 
-els.settingsClose.addEventListener("click", closeSettings);
-els.settingsOverlay.addEventListener("click", closeSettings);
-els.btnOpenSettings.addEventListener("click", () => { closePersonaDropdown(); closeCaptionsDropup(); openSettings(); });
-els.voiceHintSettings.addEventListener("click", openSettings);
+function setRoastChip(value) {
+  [...els.roastOptions.children].forEach((chip) => {
+    const on = chip.dataset.value === value;
+    chip.classList.toggle("selected", on);
+    chip.setAttribute("aria-pressed", String(on));
+  });
+}
+
+els.roastOptions.addEventListener("click", (e) => {
+  const chip = e.target.closest(".seg-item");
+  if (chip) setRoastChip(chip.dataset.value);
+});
 
 els.btnSettingsSave.addEventListener("click", () => {
-    config.setMany({
-        openrouter_api_key: els.inputOrKey.value.trim(),
-        openrouter_model: els.inputOrModel.value.trim(),
-        elevenlabs_api_key: els.inputElKey.value.trim(),
-        elevenlabs_voice_id: els.inputElVoice.value.trim(),
-        show_captions: els.toggleCaptions.checked,
-    });
-    config.save();
-    showToast("Settings saved.");
-    closeSettings();
+  config.setMany({
+    openrouter_api_key: els.inputOrKey.value.trim(),
+    openrouter_model: els.inputOrModel.value.trim(),
+    elevenlabs_api_key: els.inputElKey.value.trim(),
+    elevenlabs_voice_id: els.inputElVoice.value.trim(),
+    show_captions: els.toggleCaptions.checked,
+    roast_intensity: els.roastOptions.querySelector(".selected")?.dataset.value || "normal"
+  });
+  config.save();
+  els.toggleCaptionsQuick.checked = els.toggleCaptions.checked;
+  syncVoiceLabels();
+  showToast("Settings saved.");
+  closeSettings();
 
-    if (config.canRunWithFallback() && els.screenMain.classList.contains("active") === false) {
-        goToMainScreen();
-    }
+  // First-run: once the AI is configured, continue to voice selection.
+  if (!config.get("onboarding_complete") && config.canRunWithFallback()) {
+    pendingVoiceThenAssistant = true;
+    openVoiceSheet();
+  }
 });
 
 els.btnTestVoice.addEventListener("click", async () => {
-    try {
-        const tempConfigKey = config.get("elevenlabs_api_key");
-        const tempConfigVoice = config.get("elevenlabs_voice_id");
-        config.set("elevenlabs_api_key", els.inputElKey.value.trim());
-        config.set("elevenlabs_voice_id", els.inputElVoice.value.trim());
-        await voice.testVoice();
-        config.set("elevenlabs_api_key", tempConfigKey);
-        config.set("elevenlabs_voice_id", tempConfigVoice);
-    } catch (err) {
-        console.error(err);
-        showToast(err.message || "Couldn't reach ElevenLabs.");
-    }
+  const prevKey = config.get("elevenlabs_api_key");
+  const prevVoice = config.get("elevenlabs_voice_id");
+  try {
+    config.set("elevenlabs_api_key", els.inputElKey.value.trim());
+    config.set("elevenlabs_voice_id", els.inputElVoice.value.trim());
+    await voice.testVoice();
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "Couldn't reach ElevenLabs.");
+  } finally {
+    // Save button is what actually commits changes.
+    config.set("elevenlabs_api_key", prevKey);
+    config.set("elevenlabs_voice_id", prevVoice);
+  }
 });
 
-els.btnPickVoice.addEventListener("click", () => {
-    closeSettings();
-    openVoiceSelect("main");
+function onCaptionsToggle(checked) {
+  config.set("show_captions", checked);
+  config.save();
+  els.toggleCaptions.checked = checked;
+  els.toggleCaptionsQuick.checked = checked;
+  if (!checked) els.captions.classList.remove("visible");
+}
+els.toggleCaptions.addEventListener("change", (e) => onCaptionsToggle(e.target.checked));
+els.toggleCaptionsQuick.addEventListener("change", (e) => onCaptionsToggle(e.target.checked));
+
+/* -------------------------- header wiring ------------------------ */
+els.btnHistory.addEventListener("click", openDrawer);
+els.btnDrawerClose.addEventListener("click", closeDrawer);
+els.btnNewDrawer.addEventListener("click", newConversation);
+els.btnNewHome.addEventListener("click", newConversation);
+els.btnNewAssistant.addEventListener("click", () => { newConversation(); startConversation(); });
+els.btnPersonaHome.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = els.popPersona.classList.contains("visible");
+  closeAllPopovers();
+  if (!open) { renderPersonaPopover(); positionPopover(els.popPersona, els.btnPersonaHome); }
+});
+els.navMore.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = els.popQuick.classList.contains("visible");
+  closeAllPopovers();
+  if (!open) { els.toggleCaptionsQuick.checked = Boolean(config.get("show_captions")); positionPopover(els.popQuick, els.navMore, "left"); }
+});
+$("quick-persona").addEventListener("click", (e) => {
+  e.stopPropagation();
+  closeAllPopovers();
+  renderPersonaPopover();
+  positionPopover(els.popPersona, els.navMore, "left");
+});
+$("quick-settings").addEventListener("click", () => { closeAllPopovers(); openSettings(); });
+els.btnAttach.addEventListener("click", (e) => {
+  e.stopPropagation();
+  closeAllPopovers();
+  els.toggleCaptionsQuick.checked = Boolean(config.get("show_captions"));
+  positionPopover(els.popQuick, els.btnAttach, "left");
+});
+els.btnVoiceChip.addEventListener("click", openVoiceSheet);
+els.btnVoiceName.addEventListener("click", openVoiceSheet);
+els.btnProfile.addEventListener("click", openVoiceSheet);
+els.btnVoiceClose.addEventListener("click", () => { pendingVoiceThenAssistant = false; closeVoiceSheet(); });
+els.btnSettingsClose.addEventListener("click", closeSettings);
+els.navBack.addEventListener("click", goHome);
+
+/* ------------------------ text composer -------------------------- */
+function autoGrow() {
+  els.composerInput.style.height = "auto";
+  els.composerInput.style.height = `${Math.min(132, els.composerInput.scrollHeight)}px`;
+}
+els.composerInput.addEventListener("input", autoGrow);
+els.composerInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendTypedMessage(); }
 });
 
-// ---------------------------------------------------------------------------
-// Voice select screen
-// ---------------------------------------------------------------------------
-function currentVoiceId() { return config.get("elevenlabs_voice_id") || ""; }
-
-function renderVoiceGrid() {
-    const selectedId = currentVoiceId();
-    const presetCards = FREE_VOICES.map((v) => `
-        <div class="airc-voice-card ${v.id === selectedId ? "selected" : ""}" data-id="${v.id}" data-name="${v.name}">
-            <div class="airc-voice-card-name">${v.name}</div>
-            <div class="airc-voice-card-desc">${v.desc}</div>
-            <button class="airc-voice-select-btn" data-select="${v.id}" data-name="${v.name}">Select</button>
-        </div>
-    `).join("");
-
-    const isCustomSelected = selectedId && !FREE_VOICES.some((v) => v.id === selectedId);
-
-    els.voiceGrid.innerHTML = presetCards + `
-        <div class="airc-voice-card airc-voice-card-custom ${isCustomSelected ? "selected" : ""}">
-            <div class="airc-voice-custom-head">
-                <div class="airc-voice-card-name">Custom Voice</div>
-                <div class="airc-badge-add">+ add</div>
-            </div>
-            <div class="airc-voice-card-desc">Paste any ElevenLabs Voice ID.</div>
-            <input type="text" id="voice-custom-id" placeholder="Voice ID" value="${isCustomSelected ? selectedId : ""}" />
-            <input type="text" id="voice-custom-name" placeholder="Name (optional)" value="${isCustomSelected ? (config.get("elevenlabs_voice_name") || "") : ""}" />
-            <button class="airc-voice-select-btn" id="voice-custom-select">Select</button>
-        </div>
-    `;
-
-    document.getElementById("voice-custom-select").addEventListener("click", () => {
-        const id = document.getElementById("voice-custom-id").value.trim();
-        const name = document.getElementById("voice-custom-name").value.trim() || "Custom Voice";
-        if (!id) { showToast("Paste a Voice ID first."); return; }
-        selectVoice(id, name);
-    });
-}
-
-els.voiceGrid.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-select]");
-    if (!btn) return;
-    selectVoice(btn.dataset.select, btn.dataset.name);
-});
-
-function updateHomeVoiceLabel() {
-    const name = config.get("elevenlabs_voice_name") || (config.get("elevenlabs_voice_id") ? "Custom Voice" : "Choose voice");
-    const label = els.navHome.querySelector(".nav-label");
-    if (label) label.textContent = name;
-}
-
-function selectVoice(id, name) {
-    config.setMany({ elevenlabs_voice_id: id, elevenlabs_voice_name: name });
-    config.save();
-    els.inputElVoice.value = id;
-    updateHomeVoiceLabel();
-    closeVoiceSelect();
-    if (voiceSelectFirstRun) {
-        voiceSelectFirstRun = false;
-        goToMainScreen();
-    } else {
-        showToast(`Voice updated to ${name}.`);
-    }
-}
-
-function openVoiceSelect(mode) {
-    voiceSelectFirstRun = mode === "onboarding";
-    renderVoiceGrid();
-    els.screenVoiceSelect.classList.add("active");
-}
-function closeVoiceSelect() { els.screenVoiceSelect.classList.remove("active"); }
-
-els.navHome.addEventListener("click", () => openVoiceSelect("main"));
-els.btnVoiceBack.addEventListener("click", () => {
-    if (voiceSelectFirstRun) { showToast("Pick a voice to continue."); return; }
-    closeVoiceSelect();
-});
-
-// ---------------------------------------------------------------------------
-// Screen transitions
-// ---------------------------------------------------------------------------
-function goToMainScreen() {
-    els.screenPermission.classList.remove("active");
-    els.screenMain.classList.add("active");
-    updateHomeVoiceLabel();
-    model.mount();
-    setAvatarState("idle");
-    startConversation();
-}
-
-function goToSettingsRequired(message) {
-    els.screenPermission.classList.remove("active");
-    els.screenMain.classList.add("active");
-    updateHomeVoiceLabel();
-    model.mount();
-    setAvatarState("idle");
-    if (message) showToast(message);
+async function sendTypedMessage() {
+  const text = els.composerInput.value.trim();
+  if (!text) return;
+  if (!config.canRunWithFallback()) {
+    showToast("Add your OpenRouter key to start chatting.");
     openSettings();
+    return;
+  }
+  els.composerInput.value = "";
+  autoGrow();
+  appendMessageEl("user", text);
+  recordMessage("user", text);
+  config.addHistoryEntry(text);
+
+  const pending = appendMessageEl("assistant", "…");
+  pending.classList.add("pending");
+  const result = await brain.respond(text);
+  pending.classList.remove("pending");
+  pending.textContent = "";
+  const who = document.createElement("span");
+  who.className = "who";
+  who.textContent = "AirClia";
+  pending.append(who, document.createTextNode(result.text));
+  els.homeBody.scrollTop = els.homeBody.scrollHeight;
+  recordMessage("assistant", result.text);
+  if (result.type === "fallback") showToast("My brain glitched for a second. Give me a sec.");
 }
 
-function showSplashThenPermission() {
-    setTimeout(async () => {
-        els.screenSplash.classList.remove("active");
-        if (await isMicAlreadyGranted()) {
-            await proceedPastPermission();
-        } else {
-            els.screenPermission.classList.add("active");
-        }
-    }, 1800);
-}
-
-async function isMicAlreadyGranted() {
-    if (localStorage.getItem(MIC_GRANTED_KEY) === "1") return true;
-    try {
-        if (navigator.permissions && navigator.permissions.query) {
-            const status = await navigator.permissions.query({ name: "microphone" });
-            return status.state === "granted";
-        }
-    } catch (err) { /* permissions API unsupported — fall through */ }
-    return false;
-}
-
-async function proceedPastPermission() {
-    localStorage.setItem(MIC_GRANTED_KEY, "1");
-    if (!config.get("elevenlabs_voice_id")) {
-        els.screenMain.classList.add("active");
-        model.mount();
-        openVoiceSelect("onboarding");
-    } else if (config.isComplete() || config.canRunWithFallback()) {
-        goToMainScreen();
-    } else {
-        goToSettingsRequired("Add your API keys to get started.");
-    }
-}
-
-// ---------------------------------------------------------------------------
-// History screen
-// ---------------------------------------------------------------------------
-function openHistory() { renderHistory(); els.screenHistory.classList.add("active"); }
-function closeHistory() { els.screenHistory.classList.remove("active"); }
-
-els.btnBackMain.addEventListener("click", openHistory);
-els.btnHistoryBack.addEventListener("click", closeHistory);
-els.btnHistoryClear.addEventListener("click", () => {
-    config.clearHistory();
-    renderHistory();
-    showToast("History cleared.");
+els.btnMicHome.addEventListener("click", () => {
+  if (!config.canRunWithFallback()) { showToast("Add your OpenRouter key first."); openSettings(); return; }
+  if (!config.hasVoiceSelected()) { pendingVoiceThenAssistant = true; openVoiceSheet(); return; }
+  goAssistant();
 });
 
-function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-}
-
-function formatRelativeTime(ts) {
-    const diffMs = Date.now() - ts;
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    const days = Math.floor(hrs / 24);
-    if (days === 1) return "Yesterday";
-    if (days < 7) return `${days} days ago`;
-    return new Date(ts).toLocaleDateString();
-}
-
-function renderHistory() {
-    const items = config.getHistory();
-    if (!items.length) {
-        els.historyList.innerHTML = `<div class="airc-history-empty">No conversations yet.</div>`;
-        return;
-    }
-    els.historyList.innerHTML = items.map((item) => `
-        <div class="airc-history-item">
-            <div>
-                <div class="airc-history-text">${escapeHtml(item.text)}</div>
-                <div class="airc-history-time">${formatRelativeTime(item.ts)}</div>
-            </div>
-            <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--muted);"></i>
-        </div>
-    `).join("");
-    if (window.lucide) window.lucide.createIcons();
-}
-
-// ---------------------------------------------------------------------------
-// Microphone permission
-// ---------------------------------------------------------------------------
+/* --------------------- microphone permission --------------------- */
 async function requestMicPermission() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-        els.permissionError.classList.remove("visible");
-        els.btnRetryMic.style.display = "none";
-        await proceedPastPermission();
-    } catch (err) {
-        console.error("[AirClia] Mic permission denied.", err);
-        els.permissionError.classList.add("visible");
-        els.btnRetryMic.style.display = "inline-block";
-    }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop()); // we only needed the permission grant
+    els.permError.classList.remove("visible");
+    els.btnRetryMic.style.display = "none";
+    config.set("microphone_setup_complete", true);
+    config.save();
+    continueAfterPermission();
+  } catch (err) {
+    console.error("[AirC] Mic permission denied.", err);
+    els.permError.classList.add("visible");
+    els.btnRetryMic.style.display = "inline-flex";
+  }
 }
-
 els.btnAllowMic.addEventListener("click", requestMicPermission);
 els.btnRetryMic.addEventListener("click", requestMicPermission);
 
-// ---------------------------------------------------------------------------
-// Speech recognition
-// ---------------------------------------------------------------------------
-function setupRecognition() {
-    const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognitionImpl) {
-        showToast("This browser doesn't support speech recognition.");
-        return null;
-    }
-
-    const rec = new SpeechRecognitionImpl();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-US";
-
-    rec.onstart = () => { recognitionActive = true; };
-
-    rec.onresult = (event) => {
-        let finalTranscript = "";
-        let interimTranscript = "";
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) finalTranscript += transcript;
-            else interimTranscript += transcript;
-        }
-
-        if (interimTranscript.trim().length > 0 && voice.isSpeaking()) {
-            handleUserInterrupt();
-        }
-        if (finalTranscript.trim().length > 0) {
-            handleUserFinalTranscript(finalTranscript.trim());
-        }
-    };
-
-    rec.onerror = (event) => {
-        console.warn("[AirClia] Recognition error:", event.error);
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-            showToast("Mic access needed for AirClia to work.");
-        }
-    };
-
-    rec.onend = () => {
-        recognitionActive = false;
-        if (micEnabled) {
-            try { rec.start(); } catch (err) {
-                setTimeout(() => {
-                    if (micEnabled) { try { rec.start(); } catch (e) { /* ignore */ } }
-                }, 400);
-            }
-        }
-    };
-
-    return rec;
+function continueAfterPermission() {
+  showScreen("home");
+  renderMessages();
+  if (!config.canRunWithFallback()) {
+    openSettings();
+    showToast("Add your API keys to get started.");
+    return;
+  }
+  if (!config.hasVoiceSelected()) {
+    pendingVoiceThenAssistant = true;
+    openVoiceSheet();
+    return;
+  }
+  config.set("onboarding_complete", true);
+  config.save();
+  goAssistant();
 }
 
-// Mic toggles silently — no tone/beep is ever played, only a visual state change.
-function startListening() {
-    if (!recognition) recognition = setupRecognition();
-    if (!recognition) return;
-    micEnabled = true;
-    els.btnMic.classList.add("is-listening");
-    if (!recognitionActive) {
-        try { recognition.start(); } catch (err) { /* already started */ }
+/* ------------------------ speech recognition --------------------- */
+function setupRecognition() {
+  const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognitionImpl) {
+    showToast("This browser doesn't support speech recognition.");
+    return null;
+  }
+
+  const rec = new SpeechRecognitionImpl();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = "en-US";
+
+  rec.onstart = () => { recognitionActive = true; };
+
+  rec.onresult = (event) => {
+    let finalTranscript = "";
+    let interimTranscript = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) finalTranscript += transcript;
+      else interimTranscript += transcript;
     }
-    if (model.getState() !== "speaking") setAvatarState("listening");
-    resetSilenceTimer();
+    if (interimTranscript.trim().length > 0 && voice.isSpeaking()) {
+      // The user started talking while AirClia is speaking — interrupt NOW.
+      handleUserInterrupt();
+    }
+    if (finalTranscript.trim().length > 0) handleUserFinalTranscript(finalTranscript.trim());
+  };
+
+  rec.onerror = (event) => {
+    console.warn("[AirC] Recognition error:", event.error);
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      showToast("Mic access needed for AirC to work.");
+    }
+    // no-speech / aborted / network are recoverable — onend restarts it.
+  };
+
+  rec.onend = () => {
+    recognitionActive = false;
+    // Browsers stop recognition unexpectedly — restart automatically
+    // while the mic is meant to be on. No start/stop sounds are ever played.
+    if (micEnabled) {
+      try { rec.start(); }
+      catch (err) {
+        setTimeout(() => { if (micEnabled) { try { rec.start(); } catch (e) {} } }, 400);
+      }
+    }
+  };
+
+  return rec;
+}
+
+function startListening() {
+  if (!recognition) recognition = setupRecognition();
+  if (!recognition) return;
+  micEnabled = true;
+  els.btnMic.classList.add("is-listening");
+  els.btnMic.setAttribute("aria-pressed", "true");
+  if (!recognitionActive) { try { recognition.start(); } catch (err) {} }
+  if (model.getState() !== "speaking") setAvatarState("listening");
+  resetSilenceTimer();
 }
 
 function stopListening() {
-    micEnabled = false;
-    els.btnMic.classList.remove("is-listening");
-    clearSilenceTimer();
-    if (recognition && recognitionActive) recognition.stop();
+  micEnabled = false;
+  els.btnMic.classList.remove("is-listening");
+  els.btnMic.setAttribute("aria-pressed", "false");
+  clearSilenceTimer();
+  if (recognition && recognitionActive) recognition.stop();
 }
 
 els.btnMic.addEventListener("click", () => {
-    if (micEnabled) { stopListening(); setAvatarState("idle"); }
-    else { startListening(); }
+  if (micEnabled) { stopListening(); setAvatarState("idle"); }
+  else startListening();
 });
 
-// ---------------------------------------------------------------------------
-// Silence handling
-// ---------------------------------------------------------------------------
+/* --------------------------- silence ---------------------------- */
 function resetSilenceTimer() {
-    clearSilenceTimer();
-    if (!micEnabled) return;
-    silenceTimer = setTimeout(onSilenceTimeout, SILENCE_TIMEOUT_MS);
+  clearSilenceTimer();
+  if (!micEnabled) return;
+  silenceTimer = setTimeout(onSilenceTimeout, SILENCE_TIMEOUT_MS);
 }
 function clearSilenceTimer() {
-    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
 }
 async function onSilenceTimeout() {
-    if (!micEnabled || voice.isSpeaking()) return;
-    const result = await brain.handleSilence();
-    await speakResponse(result.text);
+  if (!micEnabled || voice.isSpeaking()) return;
+  const result = await brain.handleSilence();
+  recordMessage("assistant", result.text);
+  await speakResponse(result.text);
 }
 
-// ---------------------------------------------------------------------------
-// Conversation flow
-// ---------------------------------------------------------------------------
+/* ----------------------- conversation flow ----------------------- */
 async function startConversation() {
-    brain.resetSession();
+  if (!brain.history.length) {
+    ensureSession();
     const opener = await brain.openingLine();
+    recordMessage("assistant", opener.text);
     await speakResponse(opener.text);
-    startListening();
+  }
+  startListening();
 }
 
 async function handleUserFinalTranscript(text) {
-    clearSilenceTimer();
-    config.addHistoryEntry(text);
-    setAvatarState("thinking");
-    const result = await brain.respond(text);
+  clearSilenceTimer();
+  config.addHistoryEntry(text);
+  recordMessage("user", text);
+  setAvatarState("thinking");
+  const result = await brain.respond(text);
 
-    if (result.type === "roast") model.setEmotion("joy");
-    else if (result.type === "supportive") model.setEmotion("happy");
-    else model.setEmotion("neutral");
+  if (result.type === "roast") model.setEmotion("joy");
+  else if (result.type === "supportive") model.setEmotion("happy");
+  else model.setEmotion("neutral");
 
-    await speakResponse(result.text);
+  recordMessage("assistant", result.text);
+  if (result.type === "fallback") showToast("My brain glitched for a second. Give me a sec.");
+  await speakResponse(result.text);
 }
 
 function handleUserInterrupt() {
-    voice.stop();
-    setAvatarState("listening");
-    resetSilenceTimer();
+  voice.stop();
+  hideCaption();
+  setAvatarState("listening");
+  resetSilenceTimer();
 }
 
 async function speakResponse(text) {
-    setAvatarState("speaking");
+  setAvatarState("speaking");
+  showCaption(text);
 
-    voice.onStart = () => { model.attachAudioElement(voice.getAudioElement()); };
-    voice.onEnd = () => {
-        model.triggerNod();
-        if (micEnabled) { setAvatarState("listening"); resetSilenceTimer(); }
-        else { setAvatarState("idle"); }
-        showResponseCard(text);
-    };
-    voice.onError = (kind, err) => {
-        console.warn("[AirClia] Voice error:", kind, err);
-        if (kind === "elevenlabs") showToast("Voice service hiccup — switching to backup voice.");
-        if (kind === "no-tts") showToast("No text-to-speech available on this browser.");
-    };
+  voice.onStart = () => {
+    // Attach lip-sync once playback has actually begun — getAudioElement()
+    // returns null for the browser-TTS fallback, which AirCModel handles
+    // with a procedural mouth-movement approximation.
+    model.attachAudioElement(voice.getAudioElement());
+  };
+  voice.onEnd = () => {
+    model.triggerNod();
+    hideCaption(1400);
+    if (micEnabled) { setAvatarState("listening"); resetSilenceTimer(); }
+    else setAvatarState("idle");
+  };
+  voice.onError = (kind) => {
+    if (kind === "elevenlabs") showToast("ElevenLabs hiccuped — using the browser voice.");
+  };
 
-    await voice.speak(text);
+  await voice.speak(text);
 }
 
-// ---------------------------------------------------------------------------
-// Init
-// ---------------------------------------------------------------------------
-renderIcons();
-showSplashThenPermission();
+/* ------------------------------ boot ----------------------------- */
+function boot() {
+  renderIcons();
+  syncVoiceLabels();
+  renderPersonaPopover();
+  populateSettingsForm();
+
+  const sessions = config.getSessions();
+  currentSessionId = sessions.length ? sessions[0].id : null;
+  if (currentSessionId) brain.loadHistory(config.getSession(currentSessionId).messages);
+  renderMessages();
+
+  if (!config.get("microphone_setup_complete")) {
+    showScreen("permission");
+    return;
+  }
+  // Setup already done — go straight to the default chat home.
+  showScreen("home");
+  if (!config.canRunWithFallback()) {
+    openSettings();
+  } else if (!config.hasVoiceSelected()) {
+    pendingVoiceThenAssistant = false;
+  }
+}
 
 window.addEventListener("beforeunload", () => {
-    voice.stop();
-    if (recognition) { micEnabled = false; try { recognition.stop(); } catch (e) { /* ignore */ } }
+  voice.stop();
+  clearSilenceTimer();
+  micEnabled = false;
+  if (recognition && recognitionActive) { try { recognition.stop(); } catch (e) {} }
 });
+
+boot();
 </script>
 </body>
 </html>
