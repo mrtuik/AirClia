@@ -1,2 +1,0 @@
-# AirClia
-AirC by Clia.
