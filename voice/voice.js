@@ -12,6 +12,7 @@ export class AirCVoice {
         this._audio = null;
         this._currentObjectUrl = null;
         this._speaking = false;
+        this._gen = 0;
 
         // Optional callbacks the app controller can hook into.
         this.onStart = null;
@@ -74,8 +75,9 @@ export class AirCVoice {
     async speak(text) {
         if (!text || !text.trim()) return;
 
-        // Always fully stop whatever is currently playing before starting new speech.
         this.stop();
+
+        const myGen = ++this._gen;   // this call's ticket
 
         const apiKey = this.config.get("elevenlabs_api_key");
         const voiceId = this.config.get("elevenlabs_voice_id");
@@ -86,15 +88,17 @@ export class AirCVoice {
         }
 
         try {
-            await this._speakWithElevenLabs(text, apiKey, voiceId);
+            await this._speakWithElevenLabs(text, apiKey, voiceId, myGen);
         } catch (err) {
             console.error("[AirCVoice] ElevenLabs failed.", err);
-            if (this.onError) this.onError("elevenlabs", err);
-            if (this.onEnd) this.onEnd();
+            if (myGen === this._gen) {
+                if (this.onError) this.onError("elevenlabs", err);
+                if (this.onEnd) this.onEnd();
+            }
         }
     }
 
-    async _speakWithElevenLabs(text, apiKey, voiceId) {
+    async _speakWithElevenLabs(text, apiKey, voiceId, myGen) {
         const response = await fetch(
             `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
             {
@@ -120,6 +124,14 @@ export class AirCVoice {
         }
 
         const blob = await response.blob();
+
+        // A newer speak() call started while this fetch was in flight — discard
+        // this result entirely instead of letting it play alongside the newer one.
+        if (myGen !== this._gen) {
+            URL.revokeObjectURL(URL.createObjectURL(blob)); // no-op cleanup, blob never used
+            return;
+        }
+
         const url = URL.createObjectURL(blob);
         this._currentObjectUrl = url;
 
@@ -127,19 +139,26 @@ export class AirCVoice {
         this._audio = audio;
         this._speaking = true;
 
-        audio.addEventListener("play", () => {
-            if (this.onStart) this.onStart();
-        });
+        audio.addEventListener("play", () => { if (myGen === this._gen && this.onStart) this.onStart(); });
         audio.addEventListener("ended", () => {
-            this._speaking = false;
-            this._cleanupObjectUrl();
+
+            if (myGen !== this._gen) return; // superseded — the newer call already reset state
+
+            this._speaking = false; this._cleanupObjectUrl();
+
             if (this.onEnd) this.onEnd();
+
         });
         audio.addEventListener("error", (e) => {
-            this._speaking = false;
-            this._cleanupObjectUrl();
+
+            if (myGen !== this._gen) return;
+
+            this._speaking = false; this._cleanupObjectUrl();
+
             if (this.onError) this.onError("audio", e);
+
             if (this.onEnd) this.onEnd();
+
         });
 
         await audio.play();
@@ -150,6 +169,7 @@ export class AirCVoice {
      * makes the interrupt system feel instant.
      */
     stop() {
+        this._gen++;   // add this line at the top of stop()
         if (this._audio) {
             try {
                 this._audio.pause();
@@ -183,7 +203,7 @@ export class AirCVoice {
             if (this.onError) this.onError("no-elevenlabs", new Error("ElevenLabs not configured"));
             throw new Error("Add your ElevenLabs API key and voice ID first.");
         }
-        await this._speakWithElevenLabs(sampleText, apiKey, voiceId);
-
+        const myGen = ++this._gen;
+        await this._speakWithElevenLabs(sampleText, apiKey, voiceId, myGen);
     }
 }
