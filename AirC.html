@@ -698,6 +698,8 @@ let silenceTimer = null;
 let recognition = null;
 let recognitionActive = false;
 let isMuted = false;
+let isResponding = false;
+let pendingUserText = "";
 let modelMounted = false;
 let currentSessionId = null;
 let captionTimer = null;
@@ -1405,7 +1407,7 @@ function clearSilenceTimer() {
   if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
 }
 async function onSilenceTimeout() {
-  if (isMuted || voice.isSpeaking()) return;
+  if (isMuted || isResponding || voice.isSpeaking()) return;
   const result = await brain.handleSilence();
   recordMessage("assistant", result.text);
   await speakResponse(result.text);
@@ -1425,18 +1427,32 @@ async function startConversation() {
 
 async function handleUserFinalTranscript(text) {
   clearSilenceTimer();
-  config.addHistoryEntry(text);
-  recordMessage("user", text);
-  setAvatarState("thinking");
-  const result = await brain.respond(text);
-
-  if (result.type === "roast") model.setEmotion("joy");
-  else if (result.type === "supportive") model.setEmotion("happy");
-  else model.setEmotion("neutral");
-
-  recordMessage("assistant", result.text);
-  if (result.type === "fallback") showToast("My brain glitched for a second. Give me a sec.");
-  await speakResponse(result.text);
+  if (isResponding) {
+    // A reply is already being generated/spoken — queue this instead of
+    // firing a second overlapping brain.respond()/speak() call.
+    pendingUserText = (pendingUserText ? pendingUserText + " " : "") + text;
+    return;
+  }
+  isResponding = true;
+  try {
+    config.addHistoryEntry(text);
+    recordMessage("user", text);
+    setAvatarState("thinking");
+    const result = await brain.respond(text);
+    if (result.type === "roast") model.setEmotion("joy");
+    else if (result.type === "supportive") model.setEmotion("happy");
+    else model.setEmotion("neutral");
+    recordMessage("assistant", result.text);
+    if (result.type === "fallback") showToast("My brain glitched for a second. Give me a sec.");
+    await speakResponse(result.text);
+  } finally {
+    isResponding = false;
+    if (pendingUserText.trim()) {
+      const queued = pendingUserText.trim();
+      pendingUserText = "";
+      handleUserFinalTranscript(queued);
+    }
+  }
 }
 
 function handleUserInterrupt() {
