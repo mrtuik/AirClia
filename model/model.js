@@ -183,15 +183,11 @@ export class AirCModel {
     _onRiveLoadError(err) {
         this._riveFailed = true;
         this._riveReady = false;
-        console.warn(
-            "[AirCModel] clia.riv or the Rive runtime failed to load — falling back to CSS-only avatar (glow/breathing effects still active). The rest of the app is unaffected.",
-            err
-        );
+        const detail = (err && (err.message || err.toString && err.toString())) || String(err) || "unknown error";
+        console.warn("[AirCModel] clia.riv or the Rive runtime failed to load.", err);
         if (typeof this.onError === "function") {
-            this.onError("Character couldn't load — check that assets/clia.riv is deployed and reachable.");
+            this.onError(`Character couldn't load — ${detail}`);
         }
-        // Wrapper keeps its airc-state-* class regardless, so the existing
-        // glow/breathing CSS keeps working with no canvas content.
     }
 
     _describeInputType(input) {
