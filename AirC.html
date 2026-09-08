@@ -1372,11 +1372,12 @@ function continueAfterPermission() {
 
 /* ------------------------ speech recognition --------------------- */
 // Listening is driven by voice/stt.js (raw mic capture + local VAD +
-// ElevenLabs Scribe transcription) instead of the browser's built-in
-// SpeechRecognition — that native API triggers an OS-level chime on every
-// start()/stop(), and there's no way to silence it from JavaScript. Raw
-// getUserMedia capture makes no sound at all, only a silent status-bar
-// "mic in use" indicator, which is what actually gets rid of the beep.
+// on-device Whisper transcription, no API key/server) instead of the
+// browser's built-in SpeechRecognition — that native API triggers an
+// OS-level chime on every start()/stop(), and there's no way to silence it
+// from JavaScript. Raw getUserMedia capture makes no sound at all, only a
+// silent status-bar "mic in use" indicator, which is what actually gets
+// rid of the beep.
 function ensureRecognitionRunning() {
   if (isMuted) return;
   stt.start();
