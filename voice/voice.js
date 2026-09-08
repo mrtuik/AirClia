@@ -98,27 +98,43 @@ export class AirCVoice {
         }
     }
 
-    async _speakWithElevenLabs(text, apiKey, voiceId, myGen) {
-        const response = await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "xi-api-key": apiKey
-                },
-                body: JSON.stringify({
-                    text,
-                    model_id: "eleven_multilingual_v2",
-                    voice_settings: {
-                        stability: 0.45,
-                        similarity_boost: 0.8
-                    }
-                })
+    async _speakWithElevenLabs(text, apiKey, voiceId, myGen, attempt = 0) {
+        // Transient 429/5xx blips (and dropped connections) are common with
+        // ElevenLabs under normal use — one quick silent retry clears most
+        // of them before we give up and show the "hiccuped" toast.
+        let response;
+        try {
+            response = await fetch(
+                `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "xi-api-key": apiKey
+                    },
+                    body: JSON.stringify({
+                        text,
+                        model_id: "eleven_multilingual_v2",
+                        voice_settings: {
+                            stability: 0.45,
+                            similarity_boost: 0.8
+                        }
+                    })
+                }
+            );
+        } catch (networkErr) {
+            if (attempt < 1 && myGen === this._gen) {
+                await new Promise((r) => setTimeout(r, 500));
+                return this._speakWithElevenLabs(text, apiKey, voiceId, myGen, attempt + 1);
             }
-        );
+            throw networkErr;
+        }
 
         if (!response.ok) {
+            if (attempt < 1 && myGen === this._gen) {
+                await new Promise((r) => setTimeout(r, 500));
+                return this._speakWithElevenLabs(text, apiKey, voiceId, myGen, attempt + 1);
+            }
             const errText = await response.text().catch(() => "");
             throw new Error(`ElevenLabs error ${response.status}: ${errText}`);
         }
