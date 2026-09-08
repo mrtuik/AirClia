@@ -4,7 +4,7 @@
 // response classification, roast/follow-up/encouragement/supportive behavior,
 // and silence handling. Does NOT touch mic UI, Sketchfab, audio playback, or settings UI.
 
-import { languageLabel } from "../config/config.js";
+import { languageSpeakingInstruction } from "../config/config.js";
 
 const MAX_HISTORY_TURNS = 14; // ~10-15 recent turns, in-memory only (session, not persisted)
 
@@ -65,7 +65,7 @@ Hard rules:
 - Light teasing is welcome. Roasting only ever targets BEHAVIOR (silence, one-word answers, laziness, avoiding the question, low effort, excuses) — NEVER appearance, body, intelligence, race, religion, gender, identity, family, disability, or any personal insecurity. No slurs, no genuinely abusive language, ever.
 - If the user seems distressed, upset, or repeatedly disengaged, drop the teasing entirely and be warm and supportive instead.
 - Respond only with what AirC would actually say out loud — no stage directions, no asterisks, no emoji.
-- Respond in ${languageLabel} (script + tone natural for a spoken voice reply), regardless of the language the transcript arrives in, unless the user explicitly switches.`;
+- Respond in ${languageLabel}. This means: write everything in plain Roman/English alphabet letters, never in Devanagari or Bengali script — same as how the example is written. Keep the natural spoken tone and word-mixing of that style, regardless of the language/script the transcript arrives in, unless the user explicitly asks to switch.`;
 }
 
 export class AirCBrain {
@@ -215,7 +215,7 @@ export class AirCBrain {
         }
 
         const messages = [
-            { role: "system", content: buildSystemPrompt(this._roastIntensity(), languageLabel(this.config.get("language"))) },
+            { role: "system", content: buildSystemPrompt(this._roastIntensity(), languageSpeakingInstruction(this.config.get("language"))) },
             ...this.history
         ];
 
@@ -229,7 +229,7 @@ export class AirCBrain {
                 model,
                 messages,
                 temperature: 0.9,
-                max_tokens: 180
+                max_tokens: 130
             })
         });
 
