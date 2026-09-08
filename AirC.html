@@ -175,7 +175,9 @@ input{font-family:inherit;}
 .round-btn.primary{background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(20,20,24,.28);}
 
 /* ---------- assistant screen ---------- */
-#screen-assistant{background:linear-gradient(180deg,var(--bg) 0%,#F2F2F3 55%,#F0F0F1 100%);}
+/* Solid white — matches the character clip's own white backdrop so there's
+   no visible seam between the page and the video frame. */
+#screen-assistant{background:#FFFFFF;}
 #model-container{position:absolute;inset:0;display:grid;place-items:center;padding-bottom:60px;}
 #screen-assistant .app-header{position:relative;z-index:3;}
 .avatar-btn{
@@ -205,15 +207,22 @@ input{font-family:inherit;}
 @keyframes speakPulse{0%,100%{opacity:.62;transform:scale(1);}50%{opacity:1;transform:scale(1.05);}}
 
 /* ---------- captions ---------- */
+/* Editorial magazine-caption look, overlaid directly on the character —
+   below the chest / above the belly — instead of a chat-bubble box.
+   Tune the `top` value here against the actual clip if the body position
+   in the video ever changes. */
 #captions{
-  position:absolute;left:50%;transform:translate(-50%,10px);
-  bottom:calc(var(--safe-b) + 118px);width:min(92%,520px);z-index:4;
-  background:rgba(43,43,51,.82);color:#fff;backdrop-filter:blur(14px);
-  padding:13px 18px;border-radius:14px;font-size:16.5px;line-height:1.5;
-  text-align:center;opacity:0;pointer-events:none;
-  transition:opacity .45s var(--ease),transform .45s var(--ease);
+  position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);
+  width:min(78%,360px);z-index:4;text-align:center;pointer-events:none;
 }
-#captions.visible{opacity:1;transform:translate(-50%,0);}
+.caption-line{
+  display:inline-block;font-weight:700;font-size:21px;line-height:1.32;
+  letter-spacing:-.2px;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.55),0 6px 20px rgba(0,0,0,.35);
+  opacity:0;transform:translateY(6px);
+  transition:opacity .32s var(--ease),transform .32s var(--ease);
+}
+.caption-line.visible{opacity:1;transform:translateY(0);}
 
 /* ---------- floating bottom nav ---------- */
 .floating-nav{
@@ -459,7 +468,7 @@ input{font-family:inherit;}
       </div>
     </header>
 
-    <div id="captions" aria-live="polite"></div>
+    <div id="captions" aria-live="polite"><span class="caption-line" id="caption-line"></span></div>
 
     <nav class="floating-nav" aria-label="Assistant controls">
       <button id="nav-back" class="nav-item" aria-label="Back to chat"></button>
@@ -652,6 +661,7 @@ const els = {
   btnVoiceName: $("btn-voice-name"),
   btnNewAssistant: $("btn-new-assistant"),
   captions: $("captions"),
+  captionLine: $("caption-line"),
   navBack: $("nav-back"),
   navMore: $("nav-more"),
   navPersona: $("nav-persona"),
@@ -772,15 +782,63 @@ function setAvatarState(state) {
   if (state !== "speaking") hideCaption();
 }
 
+// One line on screen at a time, max 4 words per line — each line fades in,
+// holds briefly, fades out, and only then does the next line fade in.
+const CAPTION_MAX_WORDS = 4;
+const CAPTION_FADE_MS = 320; // matches .caption-line transition duration
+let captionQueue = [];
+let captionIndex = 0;
+let captionCycleTimer = null;
+
+function splitCaptionLines(text, maxWords = CAPTION_MAX_WORDS) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const lines = [];
+  for (let i = 0; i < words.length; i += maxWords) {
+    lines.push(words.slice(i, i + maxWords).join(" "));
+  }
+  return lines.length ? lines : [text];
+}
+
+// Roughly how long a line should hold on screen before fading out, scaled
+// by word count so short lines don't linger and longer ones aren't rushed.
+function captionHoldMs(line) {
+  const words = line.split(/\s+/).length;
+  return Math.min(2200, Math.max(950, words * 380));
+}
+
+function playNextCaptionLine() {
+  if (captionIndex >= captionQueue.length) return;
+  const line = captionQueue[captionIndex];
+  captionIndex++;
+
+  els.captionLine.textContent = line;
+  // Force reflow so the opacity/transform transition retriggers even
+  // though the previous line also had the "visible" class removed just
+  // now — without this the browser can coalesce the two class toggles.
+  void els.captionLine.offsetWidth;
+  els.captionLine.classList.add("visible");
+
+  captionTimer = setTimeout(() => {
+    els.captionLine.classList.remove("visible");
+    captionTimer = setTimeout(playNextCaptionLine, CAPTION_FADE_MS);
+  }, captionHoldMs(line));
+}
+
 function showCaption(text) {
   if (!config.get("show_captions") || !text) return;
-  els.captions.textContent = text;
-  els.captions.classList.add("visible");
   clearTimeout(captionTimer);
+  captionQueue = splitCaptionLines(text);
+  captionIndex = 0;
+  els.captionLine.classList.remove("visible");
+  playNextCaptionLine();
 }
 function hideCaption(delay = 0) {
   clearTimeout(captionTimer);
-  captionTimer = setTimeout(() => els.captions.classList.remove("visible"), delay);
+  captionTimer = setTimeout(() => {
+    els.captionLine.classList.remove("visible");
+    captionQueue = [];
+    captionIndex = 0;
+  }, delay);
 }
 
 /* ------------------------- overlay plumbing --------------------- */
@@ -1139,7 +1197,7 @@ function onCaptionsToggle(checked) {
   config.save();
   els.toggleCaptions.checked = checked;
   els.toggleCaptionsQuick.checked = checked;
-  if (!checked) els.captions.classList.remove("visible");
+  if (!checked) { clearTimeout(captionTimer); els.captionLine.classList.remove("visible"); captionQueue = []; captionIndex = 0; }
 }
 els.toggleCaptions.addEventListener("change", (e) => onCaptionsToggle(e.target.checked));
 els.toggleCaptionsQuick.addEventListener("change", (e) => onCaptionsToggle(e.target.checked));
