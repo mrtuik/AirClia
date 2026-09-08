@@ -2,8 +2,9 @@
 // AirC Speech-to-Text module.
 //
 // Captures raw microphone audio via getUserMedia + a small local
-// voice-activity detector (VAD), and sends each detected utterance to
-// ElevenLabs' Speech-to-Text (Scribe) API for transcription.
+// voice-activity detector (VAD), then transcribes each detected utterance
+// fully on-device with Whisper (via Transformers.js/ONNX-WASM) — no
+// ElevenLabs Scribe call, no API key, no per-utterance network round trip.
 //
 // This deliberately does NOT use the browser's built-in SpeechRecognition
 // API. On Android, every recognition.start()/stop() call plays an
@@ -12,6 +13,26 @@
 // turn means that chime fires constantly. Raw getUserMedia capture has
 // no such sound (just a silent "mic in use" indicator), so this is the
 // only way to make listening genuinely quiet.
+
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0";
+
+// Multilingual Whisper (NOT the ".en" variants, which are English-only).
+// "tiny" is the smallest/fastest download (~75MB, cached after first run) —
+// bump to "Xenova/whisper-base" for noticeably better Hindi/Bengali accuracy
+// at the cost of a bigger one-time download (~145MB).
+const WHISPER_MODEL = "Xenova/whisper-tiny";
+const WHISPER_SAMPLE_RATE = 16000;
+
+// Loaded once per page load and shared by every AirCSTT instance — the
+// model download/compile is the expensive part, so kick it off as early as
+// possible (see start()) and reuse the same pipeline for every utterance.
+let _asrPipelinePromise = null;
+function getAsrPipeline() {
+    if (!_asrPipelinePromise) {
+        _asrPipelinePromise = pipeline("automatic-speech-recognition", WHISPER_MODEL);
+    }
+    return _asrPipelinePromise;
+}
 
 const START_THRESHOLD = 0.035;   // RMS-ish level that counts as "speech begins"
 const STOP_THRESHOLD = 0.02;     // level that counts as "gone quiet" once talking
@@ -27,6 +48,7 @@ function pickMimeType() {
     if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return "";
     return MIME_CANDIDATES.find((t) => t === "" || MediaRecorder.isTypeSupported(t)) || "";
 }
+
 
 export class AirCSTT {
     /**
@@ -63,6 +85,12 @@ export class AirCSTT {
     async start() {
         if (this._active) return;
         this._active = true;
+        // Fire-and-forget: start downloading/compiling the Whisper model the
+        // moment listening begins, so it's already warm by the time the
+        // first utterance finishes instead of adding a cold-start delay to it.
+        getAsrPipeline().catch((err) => {
+            console.warn("[AirCSTT] Whisper model failed to load.", err);
+        });
         try {
             await this._ensureGraph();
         } catch (err) {
@@ -221,42 +249,60 @@ export class AirCSTT {
         try { recorder.stop(); } catch (e) {}
     }
 
-    async _transcribe(blob, mimeType, attempt = 0) {
-        const apiKey = this.config.get("elevenlabs_api_key");
-        if (!apiKey) {
-            if (typeof this.onError === "function") this.onError("Add your ElevenLabs API key to enable voice input.");
-            return;
-        }
-        const langCode = (this.config.get("language") || "hi-IN").split("-")[0];
-        const ext = mimeType.includes("mp4") ? "mp4" : "webm";
-
-        const form = new FormData();
-        form.append("model_id", "scribe_v1");
-        if (langCode) form.append("language_code", langCode);
-        form.append("file", blob, `utterance.${ext}`);
-
+    async _transcribe(blob, mimeType) {
         try {
-            const res = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-                method: "POST",
-                headers: { "xi-api-key": apiKey },
-                body: form
+            const audioData = await this._decodeToWhisperPCM(blob);
+            if (!audioData || !audioData.length) return;
+
+            const asr = await getAsrPipeline();
+            const langCode = (this.config.get("language") || "hi-IN").split("-")[0]; // "hi" | "bn" | "en"
+
+            const result = await asr(audioData, {
+                language: langCode,
+                task: "transcribe",
+                chunk_length_s: 20 // matches MAX_UTTERANCE_MS
             });
-            if (!res.ok) {
-                const errText = await res.text().catch(() => "");
-                throw new Error(`ElevenLabs STT error ${res.status}: ${errText}`);
-            }
-            const data = await res.json();
-            const text = ((data && data.text) || "").trim();
+
+            const text = ((result && result.text) || "").trim();
             if (text && typeof this.onFinalTranscript === "function") this.onFinalTranscript(text);
         } catch (err) {
-            // A single dropped request or transient 429/5xx shouldn't surface
-            // as "couldn't hear you" — one quick silent retry first.
-            if (attempt < 1) {
-                await new Promise((r) => setTimeout(r, 400));
-                return this._transcribe(blob, mimeType, attempt + 1);
-            }
-            console.warn("[AirCSTT] Transcription failed.", err);
+            console.warn("[AirCSTT] Whisper transcription failed.", err);
             if (typeof this.onError === "function") this.onError("Couldn't hear that clearly — try again.");
         }
+    }
+
+    /**
+     * Decodes a recorded blob (webm/opus or mp4, whatever the browser gave
+     * MediaRecorder) into a mono Float32Array at 16kHz — the exact format
+     * Whisper's feature extractor expects. Uses a scratch AudioContext for
+     * decoding (kept separate from the always-open mic-analysis context)
+     * and an OfflineAudioContext to resample down to 16kHz.
+     */
+    async _decodeToWhisperPCM(blob) {
+        const arrayBuffer = await blob.arrayBuffer();
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        const decodeCtx = new Ctx();
+        let decoded;
+        try {
+            decoded = await decodeCtx.decodeAudioData(arrayBuffer);
+        } finally {
+            decodeCtx.close().catch(() => {});
+        }
+
+        if (decoded.sampleRate === WHISPER_SAMPLE_RATE && decoded.numberOfChannels === 1) {
+            return decoded.getChannelData(0).slice();
+        }
+
+        const offline = new OfflineAudioContext(
+            1,
+            Math.ceil(decoded.duration * WHISPER_SAMPLE_RATE),
+            WHISPER_SAMPLE_RATE
+        );
+        const src = offline.createBufferSource();
+        src.buffer = decoded;
+        src.connect(offline.destination);
+        src.start(0);
+        const rendered = await offline.startRendering();
+        return rendered.getChannelData(0).slice();
     }
 }
