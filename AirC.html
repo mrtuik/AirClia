@@ -7,7 +7,7 @@
 <meta name="description" content="AirC is a premium AI voice companion. Talk to AirClia — witty, confident and always listening." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
 /* ===================================================================
@@ -194,6 +194,9 @@ input{font-family:inherit;}
 }
 .airc-model-frame-holder{position:relative;width:100%;height:100%;background:#fff;overflow:hidden;}
 .airc-model-canvas{width:100%;height:100%;display:block;}
+/* A little zoom on the character clip itself — frame-holder's overflow:hidden
+   crops the excess, so this fills the frame more without touching layout. */
+.airc-model-video{transform:scale(1.18);transform-origin:50% 18%;}
 .airc-model-wrapper{animation:breathe 7s var(--ease) infinite;}
 .airc-state-idle .airc-model-glow{opacity:.42;}
 .airc-state-listening .airc-model-glow{opacity:.6;transform:scale(1.02);}
@@ -216,9 +219,9 @@ input{font-family:inherit;}
   width:min(78%,360px);z-index:4;text-align:center;pointer-events:none;
 }
 .caption-line{
-  display:inline-block;font-weight:700;font-size:21px;line-height:1.32;
-  letter-spacing:-.2px;color:#fff;
-  text-shadow:0 1px 3px rgba(0,0,0,.55),0 6px 20px rgba(0,0,0,.35);
+  display:inline-block;font-weight:800;font-size:23px;line-height:1.28;
+  letter-spacing:-.3px;color:#fff;
+  text-shadow:0 1px 4px rgba(0,0,0,.6),0 8px 24px rgba(0,0,0,.4);
   opacity:0;transform:translateY(6px);
   transition:opacity .32s var(--ease),transform .32s var(--ease);
 }
