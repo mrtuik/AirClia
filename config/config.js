@@ -21,6 +21,20 @@ export function languageLabel(code) {
     return found ? found.label : "Hindi";
 }
 
+// Used only when building the LLM system prompt (see brain/brain.js) — same
+// language choice as languageLabel(), but spelled out so the model replies
+// in plain Roman/English letters (Hinglish/Benglish) instead of switching
+// into native Devanagari/Bengali script.
+export function languageSpeakingInstruction(code) {
+    if (code === "hi-IN") {
+        return 'Hinglish — Hindi words, but spelled out in plain Roman/English letters only (e.g. "Main accha hun, tum kaise ho"), never Devanagari script';
+    }
+    if (code === "bn-IN") {
+        return 'Benglish — Bengali words, but spelled out in plain Roman/English letters only (e.g. "Ami bhalo achi, tumi kemon acho"), never Bengali script';
+    }
+    return languageLabel(code);
+}
+
 export const BUILT_IN_VOICES = [
     {
         id: "EXAVITQu4vr4xnSDxMaL",
